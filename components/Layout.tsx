@@ -91,7 +91,7 @@ const Layout: React.FC<{ children: React.ReactNode, user?: any, onLogout?: () =>
     if (perms.page_achievements) items.push({ icon: Trophy, label: 'لوحة الإنجازات', path: '/achievements' });
     if (perms.page_teachers) items.push({ icon: UserCheck, label: 'المحاضرون', path: '/teachers' });
     if (perms.page_sales) items.push({ icon: Headphones, label: 'فريق المبيعات', path: '/sales-employees' });
-    if (perms.page_classes) items.push({ icon: BookOpen, label: 'إدارة الحلقات', path: '/classes' });
+    if (perms.page_classes) items.push({ icon: BookOpen, label: 'إدارة المحاضرات', path: '/classes' });
     if (perms.page_reports) items.push({ icon: TrendingUp, label: 'التقارير التحليلية', path: '/reports' });
     if (perms.page_database) items.push({ icon: Database, label: 'قاعدة البيانات', path: '/database' });
     if (perms.page_users || role === 'manager') items.push({ icon: UserCog, label: 'صلاحيات النظام', path: '/users' });
