@@ -76,22 +76,22 @@ const Layout: React.FC<{ children: React.ReactNode, user?: any, onLogout?: () =>
 
   const menuItems: MenuItem[] = (() => {
     const items: MenuItem[] = [];
-    if (role === 'teacher') items.push({ icon: LayoutDashboard, label: 'لوحة المعلم', path: '/teacher-dashboard' });
+    if (role === 'teacher') items.push({ icon: LayoutDashboard, label: 'لوحة المحاضر', path: '/teacher-dashboard' });
     else if (role === 'manager') items.push({ icon: LayoutDashboard, label: 'الرؤية العامة', path: '/manager-dashboard' });
     else items.push({ icon: LayoutDashboard, label: 'لوحة الإشراف', path: '/' });
 
     if (role === 'teacher') items.push({ icon: Wallet, label: 'مستحقاتي', path: '/my-earnings' });
-    if (role === 'manager') items.push({ icon: HandCoins, label: 'مستحقات المعلمين', path: '/staff-earnings' });
+    if (role === 'manager') items.push({ icon: HandCoins, label: 'مستحقات المحاضرين', path: '/staff-earnings' });
     
     if (perms.page_schedule !== false) items.push({ icon: CalendarClock, label: 'جدول المواعيد', path: '/schedule' });
     if (perms.page_students) items.push({ icon: Users, label: 'الطلاب', path: '/students' });
     if (perms.page_finance) items.push({ icon: Calculator, label: 'الحسابات والمالية', path: '/accounts' });
     if (perms.page_renewal) items.push({ icon: RefreshCw, label: 'متابعة التجديدات', path: '/renewal-followup' });
-    if (perms.page_attendance) items.push({ icon: CalendarCheck, label: 'حضور المعلمين', path: '/teacher-attendance' });
+    if (perms.page_attendance) items.push({ icon: CalendarCheck, label: 'حضور المحاضرين', path: '/teacher-attendance' });
     if (perms.page_class_eval) items.push({ icon: ClipboardCheck, label: 'تقييم الحصة', path: '/class-evaluation' });
     if (perms.page_eval_list) items.push({ icon: ClipboardList, label: 'سجل التقييمات', path: '/evaluations-list' });
     if (perms.page_achievements) items.push({ icon: Trophy, label: 'لوحة الإنجازات', path: '/achievements' });
-    if (perms.page_teachers) items.push({ icon: UserCheck, label: 'المعلمون', path: '/teachers' });
+    if (perms.page_teachers) items.push({ icon: UserCheck, label: 'المحاضرون', path: '/teachers' });
     if (perms.page_sales) items.push({ icon: Headphones, label: 'فريق المبيعات', path: '/sales-employees' });
     if (perms.page_classes) items.push({ icon: BookOpen, label: 'إدارة الحلقات', path: '/classes' });
     if (perms.page_reports) items.push({ icon: TrendingUp, label: 'التقارير التحليلية', path: '/reports' });
