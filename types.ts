@@ -28,6 +28,9 @@ export interface Student {
   edu_system: EduSystem;
   school_name: string;
   
+  // New field for language center
+  enrolled_language?: string;
+
   // Contact
   student_phone?: string;
   parent_phone: string;
@@ -45,14 +48,14 @@ export interface Student {
   
   // Staff Links
   teacher_name?: string;
-  supervisor_name?: string; // New field
+  supervisor_name?: string; 
   
   // Enrollment
   enrollment_programs: string[];
   enrollment_notes?: string;
-  renewal_status?: 'yes' | 'no' | 'undecided' | 'new'; // New Field for Renewal Tracking
+  renewal_status?: 'yes' | 'no' | 'undecided' | 'new'; 
   
-  // Finance (New)
+  // Finance
   paid_amount?: number;
   currency?: string;
   
@@ -73,7 +76,7 @@ export interface Student {
   tester_name?: string;
   tester_guidance?: string;
   
-  // New Scheduling Fields
+  // Scheduling
   required_sessions_count?: number;
   preferred_schedule?: any;
 }
