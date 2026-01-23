@@ -103,7 +103,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
         </div>
       </div>
 
-      {/* Tools Section - Updated border-radius and subtle gradient */}
+      {/* Tools Section */}
       <div className="bg-gradient-to-br from-white via-white to-slate-50 p-6 rounded-3xl border border-slate-200 custom-shadow flex flex-col xl:flex-row gap-6">
          <div className="relative flex-1">
             <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
@@ -145,7 +145,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
          </div>
       </div>
 
-      {/* Grid - Updated border-radius and subtle gradient */}
+      {/* Grid */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 text-slate-400">
           <Loader2 className="animate-spin mb-6" size={50} />
@@ -183,7 +183,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                        </span>
                     </div>
 
-                    <div className="space-y-2 mb-6">
+                    <div className="space-y-2 mb-2">
                        <div className="flex items-center text-[11px] font-bold text-slate-500 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
                           <User size={12} className="ml-2 text-blue-500" />
                           {student.age} سنة • {student.gender}
@@ -193,14 +193,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                           <span className="dir-ltr">{student.parent_phone}</span>
                        </div>
                     </div>
-
-                    <button 
-                      onClick={() => navigate(`/student-tracking/${student.id}`)}
-                      className="w-full flex items-center justify-center py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black hover:bg-amber-600 transition-all shadow-lg"
-                    >
-                       عرض سجل المتابعة
-                       <ChevronLeft size={14} className="mr-2" />
-                    </button>
                  </div>
               </div>
            ))}
