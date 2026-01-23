@@ -13,88 +13,70 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --primary-dark: #0f172a;
-        --accent-gold: #f59e0b;
-        --accent-teal: #10b981;
+        --primary-blue: #1e293b;
+        --accent-gold: #d97706;
+        --brand-teal: #0d9488;
+        --soft-bg: #f1f5f9;
       }
       body {
         font-family: 'Tajawal', sans-serif;
         margin: 0;
         padding: 0;
-        background-color: #f8fafc;
+        background-color: var(--soft-bg);
         overflow-x: hidden;
+        color: #334155;
       }
-      .quran-font { font-family: 'Amiri', serif; }
 
-      /* تحريكات مخصصة */
+      /* تحريكات مخصصة فاخرة */
       @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-      }
-      .animate-float { animation: float 6s ease-in-out infinite; }
-
-      @keyframes float-slow {
         0%, 100% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-15px) rotate(2deg); }
+        50% { transform: translateY(-15px) rotate(1deg); }
       }
-      .animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
+      .animate-float { animation: float 8s ease-in-out infinite; }
 
-      @keyframes shimmer {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
+      @keyframes glow {
+        0%, 100% { box-shadow: 0 0 20px rgba(217, 119, 6, 0.1); }
+        50% { box-shadow: 0 0 40px rgba(217, 119, 6, 0.3); }
       }
-      .shimmer {
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        background-size: 200% 100%;
-        animation: shimmer 2s infinite;
-      }
+      .animate-glow { animation: glow 4s ease-in-out infinite; }
 
-      @keyframes wiggle {
-        0%, 100% { transform: rotate(-3deg); }
-        50% { transform: rotate(3deg); }
-      }
-      .animate-wiggle { animation: wiggle 1s ease-in-out infinite; }
-
-      @keyframes pulse-glow {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); transform: scale(1); }
-        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); transform: scale(1.02); }
-      }
-      .animate-pulse-glow { animation: pulse-glow 2s infinite; }
-
-      @keyframes spin-slow {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      .animate-spin-slow { animation: spin-slow 12s linear infinite; }
-
+      /* تصميم البطاقات الزجاجية */
       .glass-card {
-        background: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
       }
 
-      .glass-panel {
-        background: rgba(255, 255, 255, 0.9);
+      .sidebar-glass {
+        background: rgba(15, 23, 42, 0.95);
         backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
       }
 
-      /* تحسين السكرول بار */
-      ::-webkit-scrollbar { width: 6px; }
+      /* تحسين السكرول بار ليناسب التصميم */
+      ::-webkit-scrollbar { width: 5px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb {
         background: #cbd5e1;
-        border-radius: 10px;
+        border-radius: 20px;
       }
-      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
       
       .text-gradient-gold {
-        background: linear-gradient(to right, #b45309, #d97706, #f59e0b);
+        background: linear-gradient(135deg, #b45309 0%, #fbbf24 50%, #d97706 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
       }
+
+      .bg-premium-dark {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      }
+
+      /* تخصيص المسافات والزوايا */
+      .rounded-huge { border-radius: 3.5rem; }
+      .custom-shadow { box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.08); }
     </style>
   <script type="importmap">
 {
