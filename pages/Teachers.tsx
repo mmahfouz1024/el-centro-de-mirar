@@ -150,8 +150,28 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
               <div key={teacher.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4 space-x-reverse">
-                    <div className="h-16 w-16 rounded-2xl bg-blue-50 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
-                      <img src={teacher.avatar} alt={teacher.full_name} className="w-full h-full object-cover" />
+                    <div className="h-16 w-16 rounded-2xl bg-blue-50 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm relative">
+                      {teacher.avatar ? (
+                        <img 
+                          src={teacher.avatar} 
+                          alt={teacher.full_name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            const parent = (e.target as HTMLImageElement).parentElement;
+                            if (parent) {
+                              const fallback = document.createElement('div');
+                              fallback.className = "w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 font-black text-2xl";
+                              fallback.innerText = teacher.full_name?.[0] || '?';
+                              parent.appendChild(fallback);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 font-black text-2xl uppercase">
+                          {teacher.full_name?.[0]}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h3 className="font-black text-slate-800 text-lg">{teacher.full_name}</h3>
