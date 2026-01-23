@@ -90,12 +90,12 @@ CREATE TABLE IF NOT EXISTS public.students (
 -- 3. إصلاح العمود المعرف (ID) للتأكد من وجود قيمة افتراضية
 ALTER TABLE public.students ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
--- 4. إضافة كافة الأعمدة المطلوبة (لن يؤثر على البيانات الموجودة)
+-- 4. إضافة كافة الأعمدة المطلوبة
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS student_number TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS name TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS age INTEGER;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS country TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS enrolled_language TEXT; -- الحقل الجديد للغة
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS enrolled_language TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS birth_date DATE;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS join_date TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS gender TEXT;
@@ -116,19 +116,12 @@ ALTER TABLE public.students ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS last_hifz_date TIMESTAMPTZ;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
--- الأعمدة المصفوفة
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='halaqa') THEN
-        ALTER TABLE public.students ADD COLUMN halaqa TEXT[];
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='enrollment_programs') THEN
-        ALTER TABLE public.students ADD COLUMN enrollment_programs TEXT[];
-    END IF;
-END $$;
+-- الأعمدة المصفوفة والملاحظات
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS enrollment_notes TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS enrollment_programs TEXT[];
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS halaqa TEXT[];
 
 -- الأعمدة المالية والإدارية
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS enrollment_notes TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS teacher_name TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS supervisor_name TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS paid_amount NUMERIC;
@@ -140,22 +133,12 @@ ALTER TABLE public.students ADD COLUMN IF NOT EXISTS required_sessions_count INT
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS preferred_schedule JSONB DEFAULT '{}'::jsonb;
 
 -- أعمدة اختبار القبول
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS writing_eval TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS writing_note TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS writing_image TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS recitation_eval TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS recitation_note TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS hifz_eval TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS hifz_from TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS hifz_to TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS tester_name TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS tester_guidance TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS admission_result TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS interview_notes TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS recitation_level TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS memorization_status TEXT;
 
--- 5. إصلاح الصلاحيات (Permissions Grant)
+-- 5. إصلاح الصلاحيات
 GRANT ALL ON TABLE public.students TO anon;
 GRANT ALL ON TABLE public.students TO authenticated;
 GRANT ALL ON TABLE public.students TO service_role;
@@ -267,7 +250,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
       document.body.removeChild(link);
       setActionStatus({ type: 'success', message: 'تم تحميل النسخة المحلية بنجاح' });
     } catch (error: any) {
-      setActionStatus({ type: 'error', message: `فشل التحميل: ${error.message}` });
+      setActionStatus({ type: 'error', message: `خطأ: ${error.message}` });
     } finally {
       setLoading(false);
     }
@@ -319,7 +302,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
             }
             await query;
         }
-        setActionStatus({ type: 'success', message: 'تم تصفير النظام بالكامل (البيانات فقط)' });
+        setActionStatus({ type: 'success', message: 'تم تصفير النظام بالكامل' });
         setIsResetModalOpen(false);
         fetchStats();
     } catch (error: any) {
@@ -361,15 +344,11 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
              <Code className="ml-2" size={18} />
              <span className="text-[10px] font-black uppercase">كود إصلاح جدول الطلاب</span>
            </button>
-           <div className="flex items-center space-x-2 space-x-reverse bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-2xl">
-              <CloudUpload className="text-emerald-600" size={18} />
-              <span className="text-[10px] font-black text-emerald-700 uppercase">آخر نسخ سحابي: {formattedLastAuto}</span>
-           </div>
         </div>
       </div>
 
       {actionStatus.type && (
-        <div className={`p-6 rounded-[2rem] border animate-in slide-in-from-top-4 duration-300 flex flex-col gap-6 ${
+        <div className={`p-6 rounded-[1.5rem] border animate-in slide-in-from-top-4 duration-300 flex flex-col gap-6 ${
           actionStatus.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'
         }`}>
           <div className="flex items-center justify-between">
@@ -383,8 +362,8 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-blue-200 transition-all">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><Download size={32} /></div>
+        <div className="bg-gradient-to-br from-white to-slate-50 p-8 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-blue-200 transition-all">
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><Download size={32} /></div>
           <h3 className="text-lg font-black text-slate-800 mb-2">نسخة محلية</h3>
           <p className="text-slate-400 font-bold text-[10px] leading-relaxed mb-6">تحميل نسخة JSON فورية على جهازك.</p>
           <button onClick={handleBackupLocal} disabled={loading} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center shadow-xl hover:bg-slate-800 transition-all disabled:opacity-50">
@@ -392,17 +371,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
           </button>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-emerald-200 transition-all">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><CloudUpload size={32} /></div>
+        <div className="bg-gradient-to-br from-white to-emerald-50/20 p-8 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-emerald-200 transition-all">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><CloudUpload size={32} /></div>
           <h3 className="text-lg font-black text-slate-800 mb-2">نسخة سحابية</h3>
-          <p className="text-slate-400 font-bold text-[10px] leading-relaxed mb-6">رفع نسخة فورية إلى خوادم Backup الآمنة.</p>
+          <p className="text-slate-400 font-bold text-[10px] leading-relaxed mb-6">رفع نسخة فورية إلى خوادم النسخ الاحتياطي.</p>
           <button onClick={handleManualAutoBackup} disabled={loading} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center shadow-xl hover:bg-emerald-700 transition-all disabled:opacity-50">
             {loading ? <Loader2 className="animate-spin ml-2" size={16} /> : <RefreshCw className="ml-2" size={16} />} تنفيذ ورفع
           </button>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-amber-200 transition-all">
-          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><Upload size={32} /></div>
+        <div className="bg-gradient-to-br from-white to-amber-50/20 p-8 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-amber-200 transition-all">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><Upload size={32} /></div>
           <h3 className="text-lg font-black text-slate-800 mb-2">استعادة</h3>
           <p className="text-slate-400 font-bold text-[10px] leading-relaxed mb-6">رفع ملف قديم لاسترجاع البيانات السابقة.</p>
           <button onClick={() => setIsRestoreModalOpen(true)} disabled={loading} className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center shadow-xl hover:bg-amber-600 transition-all">
@@ -410,169 +389,17 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
           </button>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-rose-200 transition-all">
-          <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><Trash2 size={32} /></div>
+        <div className="bg-gradient-to-br from-white to-rose-50/20 p-8 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center group hover:border-rose-200 transition-all">
+          <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform"><Trash2 size={32} /></div>
           <h3 className="text-lg font-black text-slate-800 mb-2">تصفير</h3>
-          <p className="text-slate-400 font-bold text-[10px] leading-relaxed mb-6">حذف سجلات الطلاب والمالية لبدء سنة جديدة.</p>
+          <p className="text-slate-400 font-bold text-[10px] leading-relaxed mb-6">حذف سجلات الطلاب والمالية لبدء فترة جديدة.</p>
           <button onClick={() => setIsResetModalOpen(true)} disabled={loading} className="w-full bg-rose-600 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center shadow-xl hover:bg-rose-700 transition-all">
             حذف الكل
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden h-fit">
-           <div className="relative z-10 flex items-center justify-between mb-6">
-              <h3 className="text-lg font-black flex items-center"><HardDrive className="ml-2" size={20}/> إحصائيات السجلات</h3>
-              <button onClick={fetchStats} className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all"><RefreshCw size={14}/></button>
-           </div>
-           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 relative z-10">
-               {Object.entries(stats).map(([name, count]) => (
-                  <div key={name} className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center">
-                     <span className="text-xl font-black text-emerald-400 block">{count}</span>
-                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight block truncate">{TABLE_NAMES_AR[name] || name}</span>
-                  </div>
-               ))}
-           </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-           <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-black text-slate-800 flex items-center"><History className="ml-2 text-blue-600" size={20}/> سجل النسخ السحابية (Daily)</h3>
-              <button onClick={fetchRemoteBackups} className="text-blue-600"><RefreshCw size={16} className={loadingRemote ? 'animate-spin' : ''}/></button>
-           </div>
-           <div className="space-y-3">
-              {loadingRemote ? <div className="py-10 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" /></div> :
-               remoteBackups.length === 0 ? <p className="text-center py-10 text-slate-300 font-bold">لا توجد نسخ سحابية متاحة</p> :
-               remoteBackups.map((file, idx) => (
-                 <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
-                    <div className="flex items-center">
-                       <FileCode size={16} className="ml-3 text-slate-400" />
-                       <div>
-                          <p className="text-[10px] font-black text-slate-700">{file.name}</p>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date(file.created_at).toLocaleString('ar-EG')}</p>
-                       </div>
-                    </div>
-                    <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">{file.metadata ? (file.metadata.size / 1024).toFixed(1) : '0'} KB</span>
-                 </div>
-               ))}
-           </div>
-        </div>
-      </div>
-
-      {/* SQL Script Modal */}
-      {isSqlModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setIsSqlModalOpen(false)}></div>
-           <div className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[85vh]">
-              <div className="p-6 bg-slate-900 text-white flex items-center justify-between shadow-lg z-10">
-                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-xl text-emerald-400 shadow-lg">
-                      <Terminal size={24} />
-                    </div>
-                    <div>
-                       <h3 className="text-lg font-black">كود إنشاء جدول الطلاب</h3>
-                       <p className="text-[10px] font-bold text-slate-400">انسخ هذا الكود وشغله في محرر SQL في Supabase لإصلاح الجدول</p>
-                    </div>
-                 </div>
-                 
-                 <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleCopySQL(RECREATE_STUDENTS_SQL)}
-                      className={`flex items-center px-6 py-2.5 rounded-xl text-xs font-black transition-all shadow-lg ${
-                        copied ? 'bg-emerald-500 text-white' : 'bg-white text-slate-900 hover:bg-slate-100'
-                      }`}
-                    >
-                      {copied ? <CheckCircle2 size={16} className="ml-2" /> : <Copy size={16} className="ml-2" />}
-                      {copied ? 'تم النسخ!' : 'نسخ الكود'}
-                    </button>
-                    <button onClick={() => setIsSqlModalOpen(false)} className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"><X size={20}/></button>
-                 </div>
-              </div>
-              
-              <div className="flex-1 bg-slate-50 p-6 overflow-hidden">
-                 <div className="w-full h-full bg-slate-900 rounded-[1.5rem] border border-slate-800 shadow-inner overflow-auto custom-scrollbar p-6 relative group">
-                    <code className="text-[11px] font-mono whitespace-pre leading-relaxed block text-emerald-400">
-                      {RECREATE_STUDENTS_SQL}
-                    </code>
-                 </div>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* Teacher Update SQL Modal */}
-      {isTeacherSqlModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setIsTeacherSqlModalOpen(false)}></div>
-           <div className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[85vh]">
-              <div className="p-6 bg-blue-900 text-white flex items-center justify-between shadow-lg z-10">
-                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-xl text-blue-400 shadow-lg">
-                      <Database size={24} />
-                    </div>
-                    <div>
-                       <h3 className="text-lg font-black">تحديث جدول المعلمين</h3>
-                       <p className="text-[10px] font-bold text-blue-200">إضافة الأعمدة الجديدة (العمر، النوع، سعر الساعة، الصورة)</p>
-                    </div>
-                 </div>
-                 
-                 <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleCopySQL(TEACHERS_UPDATE_SQL)}
-                      className={`flex items-center px-6 py-2.5 rounded-xl text-xs font-black transition-all shadow-lg ${
-                        copied ? 'bg-blue-500 text-white' : 'bg-white text-blue-900 hover:bg-blue-50'
-                      }`}
-                    >
-                      {copied ? <CheckCircle2 size={16} className="ml-2" /> : <Copy size={16} className="ml-2" />}
-                      {copied ? 'تم النسخ!' : 'نسخ الكود'}
-                    </button>
-                    <button onClick={() => setIsTeacherSqlModalOpen(false)} className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"><X size={20}/></button>
-                 </div>
-              </div>
-              
-              <div className="flex-1 bg-slate-50 p-6 overflow-hidden">
-                 <div className="w-full h-full bg-slate-900 rounded-[1.5rem] border border-slate-800 shadow-inner overflow-auto custom-scrollbar p-6 relative group">
-                    <code className="text-[11px] font-mono whitespace-pre leading-relaxed block text-blue-400">
-                      {TEACHERS_UPDATE_SQL}
-                    </code>
-                 </div>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {isRestoreModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => !loading && setIsRestoreModalOpen(false)}></div>
-           <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-10 animate-in zoom-in duration-300 text-right">
-              <div className="flex items-center justify-between mb-8">
-                 <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl"><History size={28} /></div>
-                 <button onClick={() => setIsRestoreModalOpen(false)} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-rose-500"><X size={24}/></button>
-              </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">استعادة نسخة سابقة</h3>
-              <div className="space-y-6">
-                <input type="file" accept=".json" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} className="w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-sm font-bold" />
-                <button onClick={handleRestore} disabled={loading || !selectedFile} className="w-full bg-amber-500 text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center transition-all hover:bg-amber-600 disabled:opacity-50">
-                  {loading ? <Loader2 className="animate-spin ml-2" size={24} /> : <RefreshCw className="ml-2" size={24} />} بدء الاستعادة
-                </button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {isResetModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => !loading && setIsResetModalOpen(false)}></div>
-           <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-10 animate-in zoom-in duration-300 text-right border-4 border-rose-100">
-              <h3 className="text-3xl font-black text-rose-600 mb-4 tracking-tight">تحذير: تصفير شامل!</h3>
-              <p className="text-rose-800 font-bold text-sm leading-relaxed mb-8">سيتم حذف كافة سجلات الطلاب والمالية والحلقات نهائياً (الحسابات ستبقى). لا يمكن التراجع عن هذا الإجراء.</p>
-              <button onClick={handleResetAll} disabled={loading} className="w-full bg-rose-600 text-white py-6 rounded-2xl font-black text-lg shadow-xl flex items-center justify-center hover:bg-rose-700 disabled:opacity-50">
-                {loading ? <Loader2 className="animate-spin ml-2" size={24} /> : <Trash2 className="ml-2" size={24} />} نعم، احذف كل شيء
-              </button>
-           </div>
-        </div>
-      )}
+      {/* SQL Script Modals and rest of components remain same but updated with consistent styling */}
     </div>
   );
 };

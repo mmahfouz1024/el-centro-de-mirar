@@ -15,7 +15,8 @@ import {
   GraduationCap,
   Sparkles,
   ChevronLeft,
-  ArrowUpRight
+  ArrowUpRight,
+  Activity
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -90,154 +91,150 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
 
   if (stats.loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400">
-      <Loader2 className="animate-spin mb-4" size={48} />
-      <p className="font-black text-xs uppercase tracking-widest">تحليل البيانات الجارية...</p>
+      <Loader2 className="animate-spin mb-6" size={60} />
+      <p className="font-black text-sm uppercase tracking-[0.3em] text-slate-800">جاري تحليل البيانات...</p>
     </div>
   );
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
+    <div className="space-y-12 animate-in fade-in duration-1000">
       
-      {/* قسم الترحيب الملكي */}
-      <div className={`p-10 lg:p-14 rounded-[4rem] text-white shadow-2xl relative overflow-hidden ${isGenSup ? 'bg-gradient-to-br from-indigo-900 via-slate-900 to-emerald-900' : 'bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900'}`}>
-         {/* تأثيرات خلفية */}
-         <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')] opacity-10 pointer-events-none"></div>
-         <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px] animate-pulse"></div>
-         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+      {/* Welcome Hero - updated to 1.5rem radius */}
+      <div className={`p-10 lg:p-14 rounded-3xl text-white shadow-2xl relative overflow-hidden bg-premium-dark`}>
+         <div className="absolute top-0 right-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')]"></div>
+         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-amber-500/20 rounded-full blur-[120px] animate-pulse"></div>
+         <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] animate-pulse delay-1000"></div>
 
-         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-10">
+         <div className="relative z-10 flex flex-col xl:flex-row justify-between items-center gap-10">
             <div className="text-right space-y-6">
-               <div className="inline-flex items-center px-4 py-1.5 bg-white/10 rounded-full border border-white/20 backdrop-blur-md">
-                  {isGenSup ? <Crown size={16} className="ml-2 text-amber-400" /> : <ShieldCheck size={16} className="ml-2 text-emerald-300" />}
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isGenSup ? 'مركز التحكم العام للمشرف' : 'لوحة القيادة والمتابعة'}</span>
+               <div className="inline-flex items-center px-6 py-2 bg-white/10 rounded-full border border-white/20 backdrop-blur-md">
+                  {isGenSup ? <Crown size={20} className="ml-3 text-amber-400" /> : <ShieldCheck size={20} className="ml-3 text-emerald-400" />}
+                  <span className="text-[12px] font-black uppercase tracking-[0.3em]">{isGenSup ? 'رئيس هيئة الإشراف' : 'لوحة القيادة الذكية'}</span>
                </div>
-               <h2 className="text-5xl lg:text-6xl font-black leading-tight">أهلاً بك في <br/> El Centro de Mirar</h2>
-               <p className="text-slate-300 text-lg font-medium max-w-lg leading-relaxed">
-                  تؤمن لك El Centro de Mirar أدوات ذكاء اصطناعي متطورة لمراقبة التحصيل العلمي وضمان جودة الحلقات في كافة الفروع.
+               <h2 className="text-4xl lg:text-6xl font-black leading-[1.1] tracking-tight">
+                  مرحباً بك في <br/>
+                  <span className="text-gradient-gold">El Centro de Mirar</span>
+               </h2>
+               <p className="text-slate-300 text-lg font-medium max-w-2xl leading-relaxed">
+                  نظام إدارة شامل مدعوم بالذكاء الاصطناعي لضمان أعلى مستويات الجودة في تعليم اللغات والعلوم.
                </p>
+               <div className="flex gap-4">
+                  <button onClick={() => navigate('/students')} className="bg-white text-slate-900 px-8 py-3.5 rounded-2xl font-black text-sm hover:bg-amber-500 hover:text-white transition-all shadow-xl">بدء المتابعة</button>
+               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-6 w-full lg:w-auto">
-               <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl text-center group hover:bg-white/20 transition-all">
-                  <Users size={32} className="mx-auto mb-3 text-emerald-300 group-hover:scale-110 transition-transform" />
+            <div className="grid grid-cols-2 gap-6 w-full xl:w-auto">
+               <div className="glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
+                  <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                     <Users size={28} className="text-white" />
+                  </div>
                   <span className="block text-4xl font-black">{stats.students.length}</span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">طالب نشط</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mt-2 block">طالب نشط</span>
                </div>
-               <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-2xl text-center group hover:bg-white/20 transition-all">
-                  <BookOpen size={32} className="mx-auto mb-3 text-blue-300 group-hover:scale-110 transition-transform" />
+               <div className="glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
+                  <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                     <BookOpen size={28} className="text-white" />
+                  </div>
                   <span className="block text-4xl font-black">{stats.classes.length}</span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">حلقة دراسية</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mt-2 block">حلقة دراسية</span>
                </div>
             </div>
          </div>
       </div>
 
-      {/* اختصارات الوصول السريع */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* KPI Stats Grid - updated to 1.5rem radius and subtle gradient */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
          {[
-            { label: 'إدارة الطلاب', icon: Users, path: '/students', color: 'emerald' },
-            { label: 'سجل الحلقات', icon: BookOpen, path: '/classes', color: 'blue' },
-            { label: 'الهيئة التعليمية', icon: Briefcase, path: '/teachers', color: 'purple' },
-            { label: 'تقييم الأداء', icon: Star, path: '/class-evaluation', color: 'amber' },
+            { label: 'سجل المحاضرين', icon: GraduationCap, val: stats.teachers.length, path: '/teachers', color: 'blue' },
+            { label: 'طلبات الاشتراك', icon: UserCheck, val: 12, path: '/subscriptions', color: 'emerald' },
+            { label: 'تقييم الجودة', icon: Star, val: '4.8', path: '/class-evaluation', color: 'amber' },
+            { label: 'النمو الشهري', icon: Activity, val: '+15%', path: '/reports', color: 'purple' },
          ].map((item, idx) => (
             <div 
                key={idx} 
                onClick={() => navigate(item.path)}
-               className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group flex flex-col items-center text-center"
+               className="bg-gradient-to-br from-white to-slate-50 p-8 rounded-3xl custom-shadow hover:-translate-y-2 transition-all cursor-pointer group flex flex-col items-center text-center border border-slate-100"
             >
-               <div className={`w-14 h-14 rounded-2xl bg-${item.color}-50 text-${item.color}-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  <item.icon size={24} />
+               <div className={`w-16 h-16 rounded-2xl bg-${item.color}-50 text-${item.color}-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner`}>
+                  <item.icon size={28} />
                </div>
-               <span className="text-sm font-black text-slate-700">{item.label}</span>
+               <h4 className="text-2xl font-black text-slate-800">{item.val}</h4>
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{item.label}</span>
             </div>
          ))}
       </div>
 
-      {/* الرسم البياني للأداء */}
+      {/* Large Charts Section - updated to 1.5rem radius and subtle gradient */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-         <div className="lg:col-span-2 bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
-            <div className="flex items-center justify-between mb-8">
+         <div className="lg:col-span-2 bg-gradient-to-br from-white via-white to-slate-50/50 p-10 rounded-3xl custom-shadow relative overflow-hidden border border-slate-100">
+            <div className="flex items-center justify-between mb-10">
                <div>
-                  <h3 className="text-2xl font-black text-slate-800 flex items-center">
-                     <TrendingUp size={24} className="ml-2 text-emerald-600" />
+                  <h3 className="text-xl font-black text-slate-800 flex items-center">
+                     <TrendingUp size={24} className="ml-3 text-amber-500" />
                      مؤشرات الأداء الأسبوعي
                   </h3>
-                  <p className="text-slate-400 text-xs font-bold mt-1">تحليل الحضور ومعدلات التحصيل اليومية</p>
-               </div>
-               <div className="flex gap-2">
-                  <div className="flex items-center text-[10px] font-black text-slate-500 bg-slate-50 px-3 py-1 rounded-full">
-                     <div className="w-2 h-2 rounded-full bg-emerald-500 ml-2"></div> الحضور
-                  </div>
-                  <div className="flex items-center text-[10px] font-black text-slate-500 bg-slate-50 px-3 py-1 rounded-full">
-                     <div className="w-2 h-2 rounded-full bg-amber-500 ml-2"></div> التحصيل
-                  </div>
+                  <p className="text-slate-400 text-xs font-bold mt-2">تحليل الحضور ومعدلات التحصيل الأكاديمي</p>
                </div>
             </div>
             
-            <div className="h-72 w-full">
+            <div className="h-[350px] w-full">
                <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                      <defs>
                         <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                           <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorMemorization" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>
-                           <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                           <stop offset="5%" stopColor="#d97706" stopOpacity={0.2}/>
+                           <stop offset="95%" stopColor="#d97706" stopOpacity={0}/>
                         </linearGradient>
                      </defs>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 'bold'}} dy={10} />
+                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 'bold'}} dy={15} />
                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} />
                      <Tooltip 
-                        contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px -5px rgba(0,0,0,0.1)'}} 
-                        itemStyle={{fontWeight: 'bold', fontSize: '12px'}}
+                        contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)'}} 
+                        itemStyle={{fontWeight: 'bold', fontSize: '13px'}}
                      />
-                     <Area type="monotone" dataKey="attendance" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorAttendance)" />
-                     <Area type="monotone" dataKey="memorization" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorMemorization)" />
+                     <Area type="monotone" dataKey="attendance" stroke="#d97706" strokeWidth={4} fill="url(#colorAttendance)" />
                   </AreaChart>
                </ResponsiveContainer>
             </div>
          </div>
 
-         {/* البطاقات الجانبية */}
+         {/* Side Cards - updated to 1.5rem radius */}
          <div className="space-y-6">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[3rem] text-white relative overflow-hidden group">
-               <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-6">
-                     <div className="p-3 bg-white/10 rounded-2xl"><Trophy size={20} className="text-amber-400" /></div>
-                     <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase">Live</span>
+            <div className="bg-premium-dark p-8 rounded-3xl text-white relative overflow-hidden group h-1/2">
+               <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div>
+                    <div className="p-3 bg-white/10 rounded-2xl inline-block mb-4"><Trophy size={28} className="text-amber-400" /></div>
+                    <h4 className="text-2xl font-black mb-2">نخبة الطلاب</h4>
+                    <p className="text-slate-400 text-xs font-medium leading-relaxed mb-6">
+                       طالب واحد من المستوى الثالث حقق الدرجة الكاملة اليوم.
+                    </p>
                   </div>
-                  <h4 className="text-3xl font-black mb-2">أفضل الحلقات</h4>
-                  <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">
-                     تتصدر حلقة "المستوى الأول" المركز الأول هذا الأسبوع بنسبة إنجاز 98%.
-                  </p>
-                  <button className="w-full py-3 bg-white text-slate-900 rounded-2xl text-xs font-black hover:bg-emerald-400 transition-colors">
-                     عرض التقرير الكامل
+                  <button className="w-full py-3.5 bg-amber-500 text-slate-900 rounded-2xl text-xs font-black hover:bg-amber-400 transition-colors shadow-lg">
+                     فتح لوحة الأوائل
                   </button>
                </div>
-               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl group-hover:bg-emerald-500/30 transition-all"></div>
+               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]"></div>
             </div>
 
-            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden">
-               <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center">
+            <div className="bg-gradient-to-br from-white to-slate-50 p-8 rounded-3xl custom-shadow border border-slate-100 h-1/2">
+               <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center shadow-inner">
                      <AlertTriangle size={24} />
                   </div>
                   <div>
-                     <h4 className="font-black text-slate-800">تنبيهات النظام</h4>
-                     <p className="text-[10px] font-bold text-slate-400">بحاجة للانتباه</p>
+                     <h4 className="font-black text-slate-800 text-base">تنبيهات حرجة</h4>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">إجراءات مطلوبة</p>
                   </div>
                </div>
                <div className="space-y-3">
-                  <div className="flex items-center text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-xl">
-                     <div className="w-2 h-2 rounded-full bg-rose-500 ml-2"></div>
-                     3 طلاب متغيبين لأكثر من أسبوع
+                  <div className="flex items-center text-[11px] font-bold text-slate-600 bg-rose-50/30 p-3 rounded-2xl border border-rose-100">
+                     <div className="w-2 h-2 rounded-full bg-rose-500 ml-2 animate-ping"></div>
+                     انتهاء صلاحية اشتراك 5 طلاب
                   </div>
-                  <div className="flex items-center text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-xl">
+                  <div className="flex items-center text-[11px] font-bold text-slate-600 bg-amber-50/30 p-3 rounded-2xl border border-amber-100">
                      <div className="w-2 h-2 rounded-full bg-amber-500 ml-2"></div>
-                     تحديث بيانات 5 محاضرين مطلوب
+                     محاضر لم يرصد حضور حلقة اليوم
                   </div>
                </div>
             </div>

@@ -64,9 +64,6 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
     points: 0,
     branch: 'الرئيسي',
     section: 'بنين' as 'بنين' | 'بنات',
-    halaqa: [] as string[],
-    enrollment_programs: [] as string[],
-    enrollment_notes: '',
     teacher_name: '',
     supervisor_name: '',
     paid_amount: '',
@@ -76,7 +73,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
     memorization_status: '',
     interview_notes: '',
     admission_result: 'قبول',
-    enrolled_language: 'اسبانى', // Default language
+    enrolled_language: 'اسبانى',
     required_sessions_count: 1,
     preferred_schedule: {} as Record<string, { from: string, to: string }>
   };
@@ -96,8 +93,6 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
         ...editingStudent,
         age: editingStudent.age ? editingStudent.age.toString() : '',
         paid_amount: editingStudent.paid_amount ? editingStudent.paid_amount.toString() : '',
-        halaqa: Array.isArray(editingStudent.halaqa) ? editingStudent.halaqa : [],
-        enrollment_programs: Array.isArray(editingStudent.enrollment_programs) ? editingStudent.enrollment_programs : [],
         last_hifz_date: editingStudent.last_hifz_date || '',
         join_date: editingStudent.join_date ? editingStudent.join_date.split('T')[0] : new Date().toISOString().split('T')[0],
         required_sessions_count: editingStudent.required_sessions_count || 1,
@@ -123,16 +118,37 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
     setActionLoading(true);
     try {
       const studentNum = editingStudent?.student_number || Math.floor(10000 + Math.random() * 90000).toString();
+      
+      // بناء Payload نظيف يحتوي فقط على الحقول الموجودة في قاعدة البيانات
       const payload = {
-        ...formData,
+        name: formData.name,
         age: Number(formData.age) || 0,
+        country: formData.country,
+        gender: formData.gender,
+        address: formData.address,
+        edu_stage: formData.edu_stage,
+        edu_system: formData.edu_system,
+        school_name: formData.school_name,
+        student_phone: formData.student_phone,
+        parent_phone: formData.parent_phone,
+        parent_country_code: formData.parent_country_code,
+        level: formData.level,
         current_juz: Number(formData.current_juz) || 30,
         total_memorized: Number(formData.total_memorized) || 0,
         points: Number(formData.points) || 0,
+        branch: formData.branch,
+        section: formData.section,
+        teacher_name: formData.teacher_name,
+        supervisor_name: formData.supervisor_name,
         paid_amount: Number(formData.paid_amount) || 0,
+        currency: formData.currency,
+        renewal_status: formData.renewal_status,
         student_number: studentNum,
-        last_hifz_date: formData.last_hifz_date ? formData.last_hifz_date : null,
-        join_date: formData.join_date ? formData.join_date : new Date().toISOString(),
+        last_hifz_date: formData.last_hifz_date || null,
+        join_date: formData.join_date || new Date().toISOString(),
+        enrolled_language: formData.enrolled_language,
+        required_sessions_count: Number(formData.required_sessions_count) || 1,
+        preferred_schedule: formData.preferred_schedule
       };
 
       if (editingStudent) {
@@ -164,7 +180,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 p-8 lg:p-12">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-100 p-8 lg:p-12">
         <form onSubmit={handleSubmit} className="space-y-10">
           
           {/* 1. المعلومات الأساسية واللغة */}
@@ -175,7 +191,6 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              {/* اختيار اللغة المراد الالتحاق بها */}
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">اللغة المراد الالتحاق بها</label>
                 <div className="flex flex-wrap gap-2">
@@ -315,7 +330,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
             </div>
           </section>
 
-          <button type="submit" disabled={actionLoading} className="w-full bg-blue-700 text-white py-6 rounded-[2rem] font-black text-lg shadow-xl shadow-blue-100 hover:bg-blue-800 transition-all flex items-center justify-center active:scale-95 disabled:opacity-50 mt-8">
+          <button type="submit" disabled={actionLoading} className="w-full bg-blue-700 text-white py-6 rounded-[1.5rem] font-black text-lg shadow-xl shadow-blue-100 hover:bg-blue-800 transition-all flex items-center justify-center active:scale-95 disabled:opacity-50 mt-8">
             {actionLoading ? <Loader2 className="animate-spin ml-2" size={24} /> : <CheckCircle2 className="ml-2" size={24} />}
             {editingStudent ? 'تحديث بيانات الطالب' : 'إتمام تسجيل الطالب'}
           </button>

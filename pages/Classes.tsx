@@ -39,7 +39,7 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterStudent, setFilterStudent] = useState('');
 
-  // Helper to get Arabic Day from a specific date string
+  // Helper to get Arabic Day
   const getArabicDay = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('ar-EG', { weekday: 'long' });
@@ -121,32 +121,6 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
     return map;
   }, [classes, studentsList]);
 
-  const goToAddClass = () => {
-    // Pass the selected filter date to pre-fill the form
-    navigate('/classes/form', { state: { initialDate: filterDate } });
-  };
-
-  const goToEditClass = (halaqa: Halaqa) => {
-    navigate('/classes/form', { state: { data: halaqa } });
-  };
-
-  const handleDateFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilterDate(e.target.value);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذه الحلقة نهائياً؟')) return;
-    try {
-      setActionLoading(true);
-      await db.classes.delete(id);
-      fetchData();
-    } catch (error) {
-      alert('فشل الحذف');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500 text-right" dir="rtl">
       
@@ -154,51 +128,34 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center">
-            <BookOpen className="ml-3 text-blue-700" size={32} />
+            <div className="p-3 bg-blue-700 text-white rounded-2xl ml-4 shadow-xl">
+               <BookOpen size={28} />
+            </div>
             {user?.role === 'teacher' ? 'إدارة حلقاتي' : 'سجل الحلقات الدراسية'}
           </h2>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">عرض الحلقات حسب التاريخ والطالب</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-3 mr-16">عرض الحلقات حسب التاريخ والطالب</p>
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-4 flex-wrap">
-            {/* Date Filter Input */}
-            <div className="flex items-center bg-white border-2 border-slate-100 rounded-2xl px-4 py-2 shadow-sm w-full sm:w-auto focus-within:border-blue-500 transition-colors">
-               <Calendar size={20} className="text-blue-600 ml-3" />
+            <div className="flex items-center bg-white border border-slate-200 rounded-3xl px-5 py-2 shadow-sm w-full sm:w-auto focus-within:ring-4 focus-within:ring-blue-500/5 transition-all">
+               <Calendar size={18} className="text-blue-600 ml-3" />
                <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">تاريخ عرض الحلقات</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">تاريخ العرض</span>
                   <input 
                     type="date" 
                     value={filterDate} 
-                    onChange={handleDateFilterChange}
-                    className="font-black text-slate-800 outline-none text-sm bg-transparent cursor-pointer"
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    className="font-black text-slate-800 outline-none text-[13px] bg-transparent cursor-pointer"
                   />
                </div>
             </div>
 
-            {/* Student Filter Input */}
-            <div className="flex items-center bg-white border-2 border-slate-100 rounded-2xl px-4 py-2 shadow-sm w-full sm:w-auto focus-within:border-emerald-500 transition-colors">
-               <GraduationCap size={20} className="text-emerald-600 ml-3" />
-               <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">تصفية بالطالب</span>
-                  <select 
-                    value={filterStudent}
-                    onChange={(e) => setFilterStudent(e.target.value)}
-                    className="font-black text-slate-800 outline-none text-sm bg-transparent cursor-pointer w-40"
-                  >
-                    <option value="">جميع الطلاب</option>
-                    {studentsList.map(s => (
-                      <option key={s.id} value={s.name}>{s.name}</option>
-                    ))}
-                  </select>
-               </div>
-            </div>
-
             <button 
-              onClick={goToAddClass} 
-              className="w-full sm:w-auto bg-blue-700 text-white px-8 py-3.5 rounded-[1.5rem] font-black text-sm flex items-center justify-center shadow-xl shadow-blue-100 hover:bg-blue-800 transition-all"
+              onClick={() => navigate('/classes/form', { state: { initialDate: filterDate } })} 
+              className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center justify-center shadow-xl hover:bg-amber-600 transition-all active:scale-95"
             >
-              <Plus size={20} className="ml-2" />
-              {user?.role === 'teacher' ? 'تسجيل حلقة جديدة' : 'إنشاء حلقة'}
+              <Plus size={18} className="ml-2" />
+              تسجيل حلقة
             </button>
         </div>
       </div>
@@ -209,45 +166,38 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
           <p className="font-black text-xs uppercase">جاري مزامنة الحلقات...</p>
         </div>
       ) : filteredClasses.length === 0 ? (
-        <div className="bg-white border-2 border-dashed border-slate-100 rounded-[3rem] py-32 text-center">
-          <Calendar size={64} className="mx-auto text-slate-200 mb-6 opacity-20" />
-          <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد حلقات مطابقة للبحث</h3>
-          <p className="text-slate-400 font-bold mb-6">
-             {getArabicDay(filterDate)}، {filterDate} {filterStudent && ` - الطالب: ${filterStudent}`}
+        <div className="bg-gradient-to-br from-white to-slate-50 border-2 border-dashed border-slate-200 rounded-3xl py-32 text-center">
+          <Calendar size={64} className="mx-auto text-slate-200 mb-6 opacity-40" />
+          <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد حلقات مسجلة</h3>
+          <p className="text-slate-400 font-bold text-xs">
+             {getArabicDay(filterDate)}، {filterDate}
           </p>
-          <button onClick={goToAddClass} className="text-blue-600 font-black text-sm hover:underline">
-             تسجيل حلقة جديدة
-          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredClasses.map(halaqa => {
             const indexInfo = classIndices[halaqa.id];
             return (
-            <div key={halaqa.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 hover:border-blue-200 transition-all text-right relative overflow-hidden group">
-               <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 rounded-2xl bg-blue-50 text-blue-600">
+            <div key={halaqa.id} className="bg-gradient-to-br from-white to-slate-50/50 rounded-3xl p-8 shadow-sm border border-slate-100 hover:border-blue-400/30 transition-all text-right relative overflow-hidden group">
+               <div className="flex justify-between items-start mb-6">
+                  <div className="p-3.5 rounded-2xl bg-blue-50 text-blue-600 shadow-inner group-hover:scale-110 transition-transform">
                     <BookOpen size={24} />
                   </div>
                   
                   <div className="flex space-x-1 space-x-reverse opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => goToEditClass(halaqa)} className="p-2 text-slate-300 hover:text-blue-600"><Edit2 size={16}/></button>
-                    <button disabled={actionLoading} onClick={() => handleDelete(halaqa.id)} className="p-2 text-slate-300 hover:text-rose-500"><Trash2 size={16}/></button>
+                    <button onClick={() => navigate('/classes/form', { state: { data: halaqa } })} className="p-2 text-slate-300 hover:text-blue-600 bg-white rounded-xl shadow-sm border border-slate-100"><Edit2 size={14}/></button>
+                    <button onClick={() => {if(confirm('حذف؟')) db.classes.delete(halaqa.id).then(fetchData);}} className="p-2 text-slate-300 hover:text-rose-500 bg-white rounded-xl shadow-sm border border-slate-100"><Trash2 size={14}/></button>
                   </div>
                </div>
 
-               <h3 className="text-lg font-black text-slate-800 mb-1 line-clamp-1">{halaqa.name}</h3>
+               <h3 className="text-lg font-black text-slate-800 mb-2 line-clamp-1">{halaqa.name}</h3>
                
-               <div className="flex items-center text-slate-500 text-xs font-bold mb-3">
-                  <User size={14} className="ml-1 text-blue-500" />
-                  المعلم: {halaqa.teacher}
+               <div className="flex items-center text-slate-500 text-[11px] font-bold mb-6">
+                  <User size={12} className="ml-1.5 text-blue-500" />
+                  المحاضر: {halaqa.teacher}
                </div>
 
-               <div className="bg-slate-50/80 p-4 rounded-2xl mb-4 border border-slate-100 space-y-2">
-                  <div className="flex items-center justify-between text-[10px] font-black text-slate-500 pb-2 border-b border-slate-200/50">
-                    <span className="flex items-center"><Calendar size={12} className="ml-1.5 text-slate-400"/> التاريخ:</span>
-                    <span>{halaqa.registration_day} {halaqa.registration_date}</span>
-                  </div>
+               <div className="bg-white/60 backdrop-blur-sm p-5 rounded-2xl mb-6 border border-slate-100/50 space-y-3 shadow-inner">
                   {halaqa.target_student && (
                     <div className="flex items-center text-[11px] font-black text-slate-600">
                       <GraduationCap size={14} className="ml-2 text-emerald-600" />
@@ -266,13 +216,14 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
                       المدة: {halaqa.duration} دقيقة
                     </div>
                   )}
-                  {indexInfo && (
-                    <div className="flex items-center text-[11px] font-black text-slate-600 border-t border-slate-200/50 pt-2 mt-2">
-                      <ListOrdered size={14} className="ml-2 text-blue-500" />
-                      ترتيب الحلقة: <span className="text-blue-600 mx-1">{indexInfo.current}</span> من <span className="text-slate-400 mx-1">{indexInfo.total}</span>
-                    </div>
-                  )}
                </div>
+
+               {indexInfo && (
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-[10px] font-black text-slate-400">
+                     <span className="flex items-center"><ListOrdered size={12} className="ml-1.5" /> تسلسل الطالب:</span>
+                     <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">{indexInfo.current} / {indexInfo.total}</span>
+                  </div>
+               )}
             </div>
           )})}
         </div>
