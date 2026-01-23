@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   UserCheck, 
@@ -10,13 +11,13 @@ import {
   Briefcase, 
   Smartphone, 
   User, 
-  Users
+  Coins,
+  Globe
 } from 'lucide-react';
 import { db } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
 
-const TARGET_AUDIENCE_OPTIONS = ['أطفال', 'رجال', 'نساء'];
-const SPECIALIZATION_OPTIONS = ['التحفيظ', 'التجويد', 'المتون', 'الإجازات'];
+const LANGUAGE_OPTIONS = ['اسبانى', 'انجليزى', 'المانى', 'فرنساوى', 'ايطالى'];
 
 const Teachers: React.FC<{ user?: any }> = ({ user }) => {
   const navigate = useNavigate();
@@ -27,7 +28,6 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGender, setFilterGender] = useState('الكل');
   const [filterSpecialization, setFilterSpecialization] = useState('الكل');
-  const [filterAudience, setFilterAudience] = useState('الكل');
 
   useEffect(() => {
     fetchInitialData();
@@ -56,7 +56,6 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
   const filteredTeachers = useMemo(() => {
     return teachers.filter(t => {
       const lowerSearch = searchTerm.toLowerCase();
-      // Search in Name, Phone, Vodafone Cash, Instapay, Username
       const matchSearch = 
         (t.full_name || '').toLowerCase().includes(lowerSearch) ||
         (t.phone || '').includes(lowerSearch) ||
@@ -64,14 +63,12 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
         (t.instapay || '').toLowerCase().includes(lowerSearch) ||
         (t.username || '').toLowerCase().includes(lowerSearch);
 
-      // Filters
       const matchGender = filterGender === 'الكل' || t.gender === filterGender;
       const matchSpec = filterSpecialization === 'الكل' || t.specialization === filterSpecialization;
-      const matchAudience = filterAudience === 'الكل' || (t.target_audience && t.target_audience.includes(filterAudience));
 
-      return matchSearch && matchGender && matchSpec && matchAudience;
+      return matchSearch && matchGender && matchSpec;
     });
-  }, [teachers, searchTerm, filterGender, filterSpecialization, filterAudience]);
+  }, [teachers, searchTerm, filterGender, filterSpecialization]);
 
   return (
     <div className="space-y-8 pb-10 text-right" dir="rtl">
@@ -92,7 +89,6 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
 
       {/* Filters Bar */}
       <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col xl:flex-row gap-6">
-         {/* Search Input */}
          <div className="relative flex-1">
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input 
@@ -104,9 +100,7 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
             />
          </div>
          
-         {/* Dropdown Filters */}
          <div className="flex flex-col sm:flex-row items-center gap-3">
-            {/* Specialization Filter */}
             <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1 rounded-2xl border border-slate-100 w-full sm:w-auto">
                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-400">
                   <Briefcase size={16} />
@@ -116,27 +110,11 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
                   value={filterSpecialization}
                   onChange={(e) => setFilterSpecialization(e.target.value)}
                >
-                  <option value="الكل">كل التخصصات</option>
-                  {SPECIALIZATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  <option value="الكل">كل لغات التخصص</option>
+                  {LANGUAGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                </select>
             </div>
 
-            {/* Target Audience Filter */}
-            <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1 rounded-2xl border border-slate-100 w-full sm:w-auto">
-               <div className="p-2 bg-white rounded-xl shadow-sm text-slate-400">
-                  <Users size={16} />
-               </div>
-               <select 
-                  className="bg-transparent text-slate-600 text-xs font-black outline-none cursor-pointer w-full sm:w-36 py-2 px-2"
-                  value={filterAudience}
-                  onChange={(e) => setFilterAudience(e.target.value)}
-               >
-                  <option value="الكل">كل الفئات</option>
-                  {TARGET_AUDIENCE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-               </select>
-            </div>
-
-            {/* Gender Filter */}
             <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1 rounded-2xl border border-slate-100 w-full sm:w-auto">
                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-400">
                   <User size={16} />
@@ -173,7 +151,7 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4 space-x-reverse">
                     <div className="h-16 w-16 rounded-2xl bg-blue-50 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
-                      <img src={teacher.avatar} alt={teacher.full_name} />
+                      <img src={teacher.avatar} alt={teacher.full_name} className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <h3 className="font-black text-slate-800 text-lg">{teacher.full_name}</h3>
@@ -199,15 +177,13 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
                       <div className="flex items-center"><User size={14} className="ml-2 text-slate-400"/> {teacher.age} سنة</div>
                    </div>
                    
-                   {teacher.target_audience && teacher.target_audience.length > 0 && (
-                     <div className="flex flex-wrap gap-1">
-                        {teacher.target_audience.map((aud: string) => (
-                           <span key={aud} className="text-[9px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-lg border border-amber-100">
-                              {aud}
-                           </span>
-                        ))}
-                     </div>
-                   )}
+                   <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 flex items-center justify-between">
+                      <div className="flex items-center">
+                         <Coins size={14} className="ml-2 text-amber-600" />
+                         <span className="text-[10px] font-black text-amber-800">سعر الساعة:</span>
+                      </div>
+                      <span className="text-sm font-black text-amber-600">{teacher.hourly_rate || 0} ج.م</span>
+                   </div>
                 </div>
               </div>
             ))}

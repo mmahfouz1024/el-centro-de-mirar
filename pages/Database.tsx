@@ -58,8 +58,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS age INTEGER;
 -- 2. إضافة عمود النوع (نص: ذكر/أنثى)
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT;
 
--- 3. إضافة عمود الفئة المستهدفة (مصفوفة نصوص) لتعدد الاختيار
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS target_audience TEXT[];
+-- 3. إضافة عمود سعر الساعة (رقمي) للمحاضر
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS hourly_rate NUMERIC DEFAULT 0;
 
 -- الأعمدة التالية غالباً موجودة، ولكن للتأكد:
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
@@ -510,7 +510,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
                     </div>
                     <div>
                        <h3 className="text-lg font-black">تحديث جدول المعلمين</h3>
-                       <p className="text-[10px] font-bold text-blue-200">إضافة الأعمدة الجديدة (العمر، النوع، الفئة المستهدفة)</p>
+                       <p className="text-[10px] font-bold text-blue-200">إضافة الأعمدة الجديدة (العمر، النوع، سعر الساعة)</p>
                     </div>
                  </div>
                  

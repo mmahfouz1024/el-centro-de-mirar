@@ -11,14 +11,13 @@ import {
   Fingerprint,
   Lock,
   Briefcase,
-  CheckSquare,
-  Square
+  Coins,
+  Languages
 } from 'lucide-react';
 import { db } from '../services/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const TARGET_AUDIENCE_OPTIONS = ['أطفال', 'رجال', 'نساء'];
-const SPECIALIZATION_OPTIONS = ['التحفيظ', 'التجويد', 'المتون', 'الإجازات'];
+const LANGUAGE_SPECIALIZATIONS = ['اسبانى', 'انجليزى', 'المانى', 'فرنساوى', 'ايطالى'];
 
 const TeacherForm: React.FC = () => {
   const navigate = useNavigate();
@@ -36,8 +35,8 @@ const TeacherForm: React.FC = () => {
     instapay: '',
     username: '',
     password: '',
-    target_audience: [] as string[],
-    specialization: 'التحفيظ',
+    hourly_rate: '', // New field
+    specialization: 'اسبانى', // Default language
     // Hidden default fields
     role: 'teacher',
     avatar: '',
@@ -55,25 +54,14 @@ const TeacherForm: React.FC = () => {
         instapay: editingTeacher.instapay || '',
         username: editingTeacher.username || '',
         password: editingTeacher.password || '', 
-        target_audience: editingTeacher.target_audience || [],
-        specialization: editingTeacher.specialization || 'التحفيظ',
+        hourly_rate: editingTeacher.hourly_rate ? editingTeacher.hourly_rate.toString() : '',
+        specialization: editingTeacher.specialization || 'اسبانى',
         role: 'teacher',
         avatar: editingTeacher.avatar || '',
         branch: editingTeacher.branch || 'الرئيسي'
       });
     }
   }, [editingTeacher]);
-
-  const handleAudienceToggle = (category: string) => {
-    setFormData(prev => {
-      const current = prev.target_audience || [];
-      if (current.includes(category)) {
-        return { ...prev, target_audience: current.filter(c => c !== category) };
-      } else {
-        return { ...prev, target_audience: [...current, category] };
-      }
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +70,7 @@ const TeacherForm: React.FC = () => {
       const payload = {
         ...formData,
         age: parseInt(formData.age) || 0,
+        hourly_rate: parseFloat(formData.hourly_rate) || 0,
         avatar: formData.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${formData.full_name}`,
       };
 
@@ -197,42 +186,40 @@ const TeacherForm: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. التخصص والفئات */}
+          {/* 4. التخصص وسعر الساعة */}
           <div className="space-y-6">
             <h4 className="text-purple-700 font-black text-xs uppercase tracking-widest flex items-center border-b border-purple-50 pb-2">
-              <Briefcase size={16} className="ml-2" />
-              ٤. التخصص والفئة المستهدفة
+              <Languages size={16} className="ml-2" />
+              ٤. التخصص والجانب المالي
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">التخصص العلمي</label>
-                <select 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none cursor-pointer appearance-none"
-                  value={formData.specialization}
-                  onChange={e => setFormData({...formData, specialization: e.target.value})}
-                >
-                  {SPECIALIZATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">تخصص اللغة</label>
+                <div className="relative">
+                   <Briefcase className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                   <select 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-bold outline-none cursor-pointer appearance-none focus:ring-4 focus:ring-purple-500/10"
+                    value={formData.specialization}
+                    onChange={e => setFormData({...formData, specialization: e.target.value})}
+                  >
+                    {LANGUAGE_SPECIALIZATIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">الفئة التي يدرسها (اختيار متعدد)</label>
-                <div className="flex flex-wrap gap-3">
-                  {TARGET_AUDIENCE_OPTIONS.map(opt => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => handleAudienceToggle(opt)}
-                      className={`flex items-center px-6 py-3 rounded-2xl text-xs font-black transition-all border ${
-                        formData.target_audience.includes(opt) 
-                        ? 'bg-purple-600 text-white border-purple-600 shadow-md' 
-                        : 'bg-white text-slate-500 border-slate-100 hover:border-purple-200'
-                      }`}
-                    >
-                      {formData.target_audience.includes(opt) ? <CheckSquare size={16} className="ml-2" /> : <Square size={16} className="ml-2" />}
-                      {opt}
-                    </button>
-                  ))}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">سعر الساعة للمحاضر (ج.م)</label>
+                <div className="relative">
+                  <Coins className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500" size={18} />
+                  <input 
+                    type="number" 
+                    required 
+                    step="0.01"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-purple-500/10 transition-all" 
+                    placeholder="0.00"
+                    value={formData.hourly_rate} 
+                    onChange={e => setFormData({...formData, hourly_rate: e.target.value})} 
+                  />
                 </div>
               </div>
             </div>
