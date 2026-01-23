@@ -61,6 +61,9 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT;
 -- 3. إضافة عمود سعر الساعة (رقمي) للمحاضر
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS hourly_rate NUMERIC DEFAULT 0;
 
+-- 4. إضافة عمود الصورة الشخصية
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar TEXT;
+
 -- الأعمدة التالية غالباً موجودة، ولكن للتأكد:
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS vodafone_cash TEXT;
@@ -510,7 +513,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
                     </div>
                     <div>
                        <h3 className="text-lg font-black">تحديث جدول المعلمين</h3>
-                       <p className="text-[10px] font-bold text-blue-200">إضافة الأعمدة الجديدة (العمر، النوع، سعر الساعة)</p>
+                       <p className="text-[10px] font-bold text-blue-200">إضافة الأعمدة الجديدة (العمر، النوع، سعر الساعة، الصورة)</p>
                     </div>
                  </div>
                  
