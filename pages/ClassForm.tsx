@@ -9,11 +9,7 @@ import { db } from '../services/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const DURATION_OPTIONS = ['30', '35', '40', '45', '50', '60'];
-const CLASS_TYPES = [
-  'تحفيظ وتجويد',
-  'متون',
-  'تعليم اللغة العربية لغير الناطقين بها'
-];
+const LANGUAGE_OPTIONS = ['اسبانى', 'انجليزى', 'المانى', 'فرنساوى', 'ايطالى'];
 
 const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
   const navigate = useNavigate();
@@ -35,7 +31,7 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
     teacher: user?.full_name || '',
     target_student: '',
     duration: '30',
-    class_type: 'تحفيظ وتجويد',
+    class_type: 'اسبانى',
     registration_day: getArabicDay(initialDate),
     registration_date: initialDate,
     branch: 'الرئيسي'
@@ -61,22 +57,43 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
           teacher: editingHalaqa.teacher,
           target_student: editingHalaqa.target_student || '',
           duration: editingHalaqa.duration || '30',
-          class_type: editingHalaqa.class_type || 'تحفيظ وتجويد',
+          class_type: editingHalaqa.class_type || 'اسبانى',
           registration_day: editingHalaqa.registration_day || getArabicDay(editingHalaqa.registration_date),
           registration_date: editingHalaqa.registration_date,
           branch: editingHalaqa.branch
         });
       } else {
         // Set default teacher if creating new and user is manager
-        if (!user || user.role !== 'teacher') {
+        if (user && user.role !== 'teacher') {
            if(teachersData && teachersData.length > 0) {
-               setFormData(prev => ({ ...prev, teacher: teachersData[0].full_name }));
+               const defaultTeacher = teachersData[0];
+               setFormData(prev => ({ 
+                 ...prev, 
+                 teacher: defaultTeacher.full_name,
+                 class_type: defaultTeacher.specialization || 'اسبانى'
+               }));
            }
+        } else if (user?.role === 'teacher') {
+            // If teacher is filling, auto-select their language
+            const myProfile = teachersData?.find(t => t.full_name === user.full_name);
+            if (myProfile?.specialization) {
+              setFormData(prev => ({ ...prev, class_type: myProfile.specialization }));
+            }
         }
       }
     };
     fetchData();
   }, [editingHalaqa, user]);
+
+  // التحديد التلقائي للغة المحاضرة عند تغيير المحاضر
+  useEffect(() => {
+    if (formData.teacher && teachers.length > 0) {
+        const selectedTeacherObj = teachers.find(t => t.full_name === formData.teacher);
+        if (selectedTeacherObj?.specialization) {
+            setFormData(prev => ({ ...prev, class_type: selectedTeacherObj.specialization }));
+        }
+    }
+  }, [formData.teacher, teachers]);
 
   const handleFormDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = e.target.value;
@@ -91,7 +108,7 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      const generatedName = `${formData.class_type} - ${formData.target_student} (${formData.registration_date})`;
+      const generatedName = `محاضرة ${formData.class_type} - ${formData.target_student} (${formData.registration_date})`;
 
       const payload = {
         name: generatedName,
@@ -133,8 +150,8 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
           <ChevronRight size={20} />
         </button>
         <div>
-          <h2 className="text-2xl font-black text-slate-800">{editingHalaqa ? 'تعديل بيانات الحلقة' : 'تسجيل حلقة جديدة'}</h2>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">إدارة سجل الحصص اليومية</p>
+          <h2 className="text-2xl font-black text-slate-800">{editingHalaqa ? 'تعديل بيانات المحاضرة' : 'تسجيل محاضرة جديدة'}</h2>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">إدارة سجل المحاضرات اليومية</p>
         </div>
       </div>
 
@@ -144,7 +161,7 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
           {/* 1. يوم التسجيل (محسوب) */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">يوم تسجيل الحلقة</label>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">يوم تسجيل المحاضرة</label>
                <input 
                  type="text" 
                  readOnly 
@@ -185,9 +202,9 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
              )}
           </div>
 
-          {/* 4. مدة الحلقة */}
+          {/* 4. مدة المحاضرة */}
           <div className="space-y-1.5">
-             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">مدة الحلقة (دقيقة)</label>
+             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">مدة المحاضرة (دقيقة)</label>
              <div className="grid grid-cols-3 gap-2">
                 {DURATION_OPTIONS.map(opt => (
                   <button
@@ -206,15 +223,15 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
              </div>
           </div>
 
-          {/* 5. نوع الحلقة */}
+          {/* 5. لغة المحاضرة (تحدد تلقائيا) */}
           <div className="space-y-1.5">
-             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">نوع الحلقة</label>
+             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">لغة المحاضرة (تحدد تلقائياً حسب المحاضر)</label>
              <select 
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none cursor-pointer" 
+                className="w-full bg-slate-100 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none cursor-not-allowed opacity-80" 
                 value={formData.class_type} 
-                onChange={e => setFormData({...formData, class_type: e.target.value})}
+                disabled
              >
-                {CLASS_TYPES.map(type => (
+                {LANGUAGE_OPTIONS.map(type => (
                   <option key={type} value={type}>{type}</option>
                 ))}
              </select>
@@ -237,7 +254,7 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
 
           <button type="submit" disabled={actionLoading} className="w-full bg-blue-700 text-white py-5 rounded-2xl font-black shadow-xl flex items-center justify-center transition-all disabled:opacity-50 mt-4 active:scale-95">
             {actionLoading ? <Loader2 className="animate-spin ml-2" size={20} /> : <CheckCircle2 className="ml-2" size={20} />}
-            {editingHalaqa ? 'حفظ التعديلات' : 'تسجيل الحلقة'}
+            {editingHalaqa ? 'حفظ التعديلات' : 'تسجيل المحاضرة'}
           </button>
         </form>
       </div>
