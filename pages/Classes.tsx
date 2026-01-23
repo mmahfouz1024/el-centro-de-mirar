@@ -131,9 +131,9 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
             <div className="p-3 bg-blue-700 text-white rounded-2xl ml-4 shadow-xl">
                <BookOpen size={28} />
             </div>
-            {user?.role === 'teacher' ? 'إدارة حلقاتي' : 'سجل الحلقات الدراسية'}
+            {user?.role === 'teacher' ? 'إدارة محاضراتي' : 'سجل المحاضرات الدراسية'}
           </h2>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-3 mr-16">عرض الحلقات حسب التاريخ والطالب</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-3 mr-16">عرض المحاضرات حسب التاريخ والطالب</p>
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-4 flex-wrap">
@@ -155,7 +155,7 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
               className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center justify-center shadow-xl hover:bg-amber-600 transition-all active:scale-95"
             >
               <Plus size={18} className="ml-2" />
-              تسجيل حلقة
+              تسجيل محاضرة
             </button>
         </div>
       </div>
@@ -163,12 +163,12 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 text-slate-300">
           <Loader2 className="animate-spin mb-4" size={48} />
-          <p className="font-black text-xs uppercase">جاري مزامنة الحلقات...</p>
+          <p className="font-black text-xs uppercase">جاري مزامنة المحاضرات...</p>
         </div>
       ) : filteredClasses.length === 0 ? (
         <div className="bg-gradient-to-br from-white to-slate-50 border-2 border-dashed border-slate-200 rounded-3xl py-32 text-center">
           <Calendar size={64} className="mx-auto text-slate-200 mb-6 opacity-40" />
-          <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد حلقات مسجلة</h3>
+          <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد محاضرات مسجلة</h3>
           <p className="text-slate-400 font-bold text-xs">
              {getArabicDay(filterDate)}، {filterDate}
           </p>
@@ -207,7 +207,7 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
                   {halaqa.class_type && (
                     <div className="flex items-center text-[11px] font-black text-slate-600">
                       <List size={14} className="ml-2 text-purple-600" />
-                      النوع: {halaqa.class_type}
+                      اللغة: {halaqa.class_type}
                     </div>
                   )}
                   {halaqa.duration && (
