@@ -138,8 +138,8 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                 </div>
                 <div className="relative">
                    <User className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" size={16} />
-                   <select className="w-full bg-slate-50 border border-slate-100 rounded-xl pr-9 pl-3 py-3 text-xs font-bold outline-none cursor-pointer focus:ring-2 focus:ring-emerald-500/10 appearance-none" value={filterTeacher} onChange={(e) => setFilterTeacher(e.target.value)}>
-                      <option value="الكل">كل المعلمين</option>
+                   <select className="w-full bg-slate-50 border border-slate-100 rounded-xl pr-9 pl-3 py-3 text-xs font-bold outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/10 appearance-none" value={filterTeacher} onChange={(e) => setFilterTeacher(e.target.value)}>
+                      <option value="الكل">كل المحاضرين</option>
                       {teachersList.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
                    </select>
                 </div>
@@ -214,7 +214,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                              <span className="inline-flex items-center px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-black mb-1">
                                 {student.level}
                              </span>
-                             <div className="text-[9px] text-slate-400 font-bold">حفظ: {student.total_memorized} جزء</div>
                           </td>
                           {!isTeacher && (
                             <td className="px-6 py-4">

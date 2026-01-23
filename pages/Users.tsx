@@ -31,7 +31,7 @@ const PERMISSION_DISPLAY_CONFIG: Record<string, { label: string; icon: any }> = 
   page_students: { label: 'الطلاب', icon: UsersIcon },
   page_classes: { label: 'الحلقات', icon: BookOpen },
   page_reports: { label: 'التقارير', icon: BarChart3 },
-  page_teachers: { label: 'المعلمون', icon: UserCheck },
+  page_teachers: { label: 'المحاضرون', icon: UserCheck },
   page_sales: { label: 'المبيعات', icon: Headphones },
 };
 
@@ -81,7 +81,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ user: currentUser }) => {
     switch (role) {
       case 'manager': return 'مدير عام';
       case 'supervisor': return 'مشرف';
-      case 'teacher': return 'معلم';
+      case 'teacher': return 'محاضر';
       case 'sales': return 'موظف مبيعات';
       default: return 'عضو';
     }
@@ -149,7 +149,7 @@ const UsersPage: React.FC<UsersPageProps> = ({ user: currentUser }) => {
               <option value="all">عرض الجميع</option>
               <option value="manager">المدراء</option>
               <option value="supervisor">المشرفين</option>
-              <option value="teacher">المعلمين</option>
+              <option value="teacher">المحاضرين</option>
               <option value="sales">فريق المبيعات</option>
            </select>
         </div>

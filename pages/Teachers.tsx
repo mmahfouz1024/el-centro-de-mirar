@@ -77,13 +77,13 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
         <div>
           <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center">
             <UserCheck className="ml-3 text-blue-700" size={32} />
-            إدارة المعلمين
+            إدارة المحاضرين
           </h2>
           <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">سجل بيانات أعضاء هيئة التدريس</p>
         </div>
         <button onClick={goToAddTeacher} className="bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center shadow-xl shadow-blue-100 hover:bg-blue-800 transition-all">
           <Plus size={18} className="ml-2" />
-          إضافة معلم
+          إضافة محاضر
         </button>
       </div>
 
@@ -185,7 +185,7 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
                     <button onClick={() => goToEditTeacher(teacher)} className="p-2 text-slate-300 hover:text-blue-600 transition-all">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => { if(confirm('حذف المعلم؟')) db.teachers.delete(teacher.id).then(fetchInitialData); }} className="p-2 text-slate-300 hover:text-rose-500 transition-all">
+                    <button onClick={() => { if(confirm('حذف المحاضر؟')) db.teachers.delete(teacher.id).then(fetchInitialData); }} className="p-2 text-slate-300 hover:text-rose-500 transition-all">
                       <Trash2 size={18} />
                     </button>
                   </div>

@@ -222,7 +222,7 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
 
           {/* حقل المعلم */}
           <div className="space-y-1.5 pt-2 border-t border-slate-50">
-             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المعلم المسؤول</label>
+             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المحاضر المسؤول</label>
              <select 
                 required 
                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none disabled:opacity-60" 
@@ -230,7 +230,7 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
                 onChange={e => setFormData({...formData, teacher: e.target.value})}
                 disabled={user?.role === 'teacher'}
              >
-                <option value="">اختر معلماً...</option>
+                <option value="">اختر محاضراً...</option>
                 {teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
              </select>
           </div>

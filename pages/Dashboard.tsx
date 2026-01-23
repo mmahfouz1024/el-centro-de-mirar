@@ -162,14 +162,14 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                      <TrendingUp size={24} className="ml-2 text-emerald-600" />
                      مؤشرات الأداء الأسبوعي
                   </h3>
-                  <p className="text-slate-400 text-xs font-bold mt-1">تحليل الحضور ومعدلات الحفظ اليومية</p>
+                  <p className="text-slate-400 text-xs font-bold mt-1">تحليل الحضور ومعدلات التحصيل اليومية</p>
                </div>
                <div className="flex gap-2">
                   <div className="flex items-center text-[10px] font-black text-slate-500 bg-slate-50 px-3 py-1 rounded-full">
                      <div className="w-2 h-2 rounded-full bg-emerald-500 ml-2"></div> الحضور
                   </div>
                   <div className="flex items-center text-[10px] font-black text-slate-500 bg-slate-50 px-3 py-1 rounded-full">
-                     <div className="w-2 h-2 rounded-full bg-amber-500 ml-2"></div> الحفظ
+                     <div className="w-2 h-2 rounded-full bg-amber-500 ml-2"></div> التحصيل
                   </div>
                </div>
             </div>
@@ -211,7 +211,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                   </div>
                   <h4 className="text-3xl font-black mb-2">أفضل الحلقات</h4>
                   <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">
-                     تتصدر حلقة "الإتقان" المركز الأول هذا الأسبوع بنسبة إنجاز 98%.
+                     تتصدر حلقة "المستوى الأول" المركز الأول هذا الأسبوع بنسبة إنجاز 98%.
                   </p>
                   <button className="w-full py-3 bg-white text-slate-900 rounded-2xl text-xs font-black hover:bg-emerald-400 transition-colors">
                      عرض التقرير الكامل
@@ -237,7 +237,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                   </div>
                   <div className="flex items-center text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-xl">
                      <div className="w-2 h-2 rounded-full bg-amber-500 ml-2"></div>
-                     تحديث بيانات 5 معلمين مطلوب
+                     تحديث بيانات 5 محاضرين مطلوب
                   </div>
                </div>
             </div>

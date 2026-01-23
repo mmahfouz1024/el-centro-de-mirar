@@ -97,7 +97,7 @@ const TeacherForm: React.FC = () => {
           <ChevronRight size={20} />
         </button>
         <div>
-          <h2 className="text-2xl font-black text-slate-800">{editingTeacher ? 'تعديل ملف معلم' : 'تسجيل معلم جديد'}</h2>
+          <h2 className="text-2xl font-black text-slate-800">{editingTeacher ? 'تعديل ملف محاضر' : 'تسجيل محاضر جديد'}</h2>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">إدارة بيانات عضو هيئة التدريس</p>
         </div>
       </div>
@@ -231,7 +231,7 @@ const TeacherForm: React.FC = () => {
             className="w-full bg-blue-700 text-white py-6 rounded-[2.5rem] font-black shadow-xl flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 text-lg"
           >
             {actionLoading ? <Loader2 className="animate-spin ml-2" size={24} /> : <CheckCircle2 className="ml-2" size={24} />}
-            {editingTeacher ? 'حفظ التعديلات' : 'تسجيل المعلم'}
+            {editingTeacher ? 'حفظ التعديلات' : 'تسجيل المحاضر'}
           </button>
         </form>
       </div>

@@ -164,7 +164,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
         <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">
                 <div>
-                    <h2 className="text-3xl font-black mb-1">لوحة المعلم</h2>
+                    <h2 className="text-3xl font-black mb-1">لوحة المحاضر</h2>
                     <p className="text-emerald-200 text-sm font-medium">مرحباً بك، {user?.full_name}</p>
                 </div>
                 <div className="bg-white/10 p-2 rounded-2xl backdrop-blur-sm border border-white/20">

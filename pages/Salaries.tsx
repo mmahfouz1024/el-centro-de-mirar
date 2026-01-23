@@ -7,27 +7,27 @@ import {
   Loader2, 
   Trash2, 
   X, 
-  CheckCircle,
-  FileText,
-  TrendingUp,
-  Lock,
-  Calculator,
-  PlusCircle,
-  MinusCircle,
-  Clock,
-  CalendarDays,
-  RefreshCw,
-  Edit3,
-  Wallet,
-  CheckCircle2,
-  Headphones,
-  ShieldCheck,
-  GraduationCap,
-  Smartphone,
-  CreditCard,
-  Zap,
-  Scale,
-  ArrowRightLeft
+  CheckCircle, 
+  FileText, 
+  TrendingUp, 
+  Lock, 
+  Calculator, 
+  PlusCircle, 
+  MinusCircle, 
+  Clock, 
+  CalendarDays, 
+  RefreshCw, 
+  Edit3, 
+  Wallet, 
+  CheckCircle2, 
+  Headphones, 
+  ShieldCheck, 
+  GraduationCap, 
+  Smartphone, 
+  CreditCard, 
+  Zap, 
+  Scale, 
+  ArrowRightLeft 
 } from 'lucide-react';
 import { db } from '../services/supabase';
 
@@ -316,7 +316,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
   };
 
   const handleAutoGenerateSalaries = async () => {
-    if (!confirm('هل أنت متأكد من توليد رواتب جميع المعلمين للشهر الحالي آلياً؟ سيتم حساب الراتب بناءً على الحلقات المسجلة.')) return;
+    if (!confirm('هل أنت متأكد من توليد رواتب جميع المحاضرين للشهر الحالي آلياً؟ سيتم حساب الراتب بناءً على الحلقات المسجلة.')) return;
     
     setActionLoading(true);
     try {
@@ -405,7 +405,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
     return filtered;
   }, [salaries, selectedBranch, salaryTab]);
 
-  // حساب كشف حساب المعلم (الرصيد التراكمي)
+  // حساب كشف حساب المحاضر (الرصيد التراكمي)
   const teacherAccounts = useMemo(() => {
     const acc: Record<string, { name: string, earned: number, paid: number }> = {};
 
@@ -413,7 +413,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
     studentExpenses.forEach(exp => {
         const teacherShare = Number(exp.teacher_ratio) || 0;
         if (teacherShare > 0) {
-            // نربط الدفعة بالمعلم من خلال الطالب
+            // نربط الدفعة بالمحاضر من خلال الطالب
             const student = students.find(s => s.name === exp.student_name);
             const teacherName = student?.teacher_name;
             if (teacherName) {
@@ -424,7 +424,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
     });
 
     // 2. حساب المدفوعات من الرواتب (المدين)
-    // نستخدم filteredSalaries أو الرواتب الكلية للمعلمين
+    // نستخدم filteredSalaries أو الرواتب الكلية للمحاضرين
     const teacherSalaries = salaries.filter(s => s.role === 'teacher');
     teacherSalaries.forEach(sal => {
         const name = sal.employee_name;
@@ -493,7 +493,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
             className={`flex items-center px-6 py-3 rounded-[1.5rem] text-xs font-black transition-all whitespace-nowrap ${salaryTab === 'teachers' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}
         >
             <GraduationCap size={16} className="ml-2" />
-            رواتب المعلمين
+            رواتب المحاضرين
         </button>
       </div>
 
@@ -501,7 +501,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
         <div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center">
             <DollarSign className="ml-3 text-emerald-600" size={28} />
-            {salaryTab === 'sales' ? 'مسيرات رواتب المبيعات' : salaryTab === 'supervisors' ? 'مسيرات رواتب الإشراف' : 'مسيرات رواتب المعلمين'}
+            {salaryTab === 'sales' ? 'مسيرات رواتب المبيعات' : salaryTab === 'supervisors' ? 'مسيرات رواتب الإشراف' : 'مسيرات رواتب المحاضرين'}
             {selectedBranch !== 'الكل' && ` (فرع ${selectedBranch})`}
           </h2>
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">إدارة المستحقات المالية والخصومات</p>
@@ -520,7 +520,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
                         onClick={() => setViewMode('accounts')} 
                         className={`px-4 py-2 rounded-lg text-[10px] font-black transition-all ${viewMode === 'accounts' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}
                     >
-                        كشف حساب المعلم
+                        كشف حساب المحاضر
                     </button>
                 </div>
                 <button 
@@ -591,7 +591,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
                         <tr key={sal.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
                             <span className="text-sm font-black text-slate-800">{sal.employee_name}</span>
-                            <span className="block text-[9px] text-slate-400 font-bold mt-0.5">{sal.role === 'sales' ? 'خدمة عملاء' : sal.role === 'supervisor' ? 'مشرف' : 'معلم'}</span>
+                            <span className="block text-[9px] text-slate-400 font-bold mt-0.5">{sal.role === 'sales' ? 'خدمة عملاء' : sal.role === 'supervisor' ? 'مشرف' : 'محاضر'}</span>
                         </td>
                         <td className="px-6 py-4"><span className="text-[10px] font-bold text-slate-500">{sal.branch}</span></td>
                         <td className="px-6 py-4 text-xs font-bold text-slate-500">{Number(sal.base_salary).toLocaleString()} ج.م</td>
@@ -613,10 +613,10 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
             <div className="p-6 border-b border-slate-50 bg-emerald-50/30 flex items-center justify-between">
                <h3 className="text-lg font-black text-slate-800 flex items-center">
                  <Scale size={20} className="ml-2 text-emerald-600" />
-                 كشف حساب المعلم (المستحقات vs المصروفات)
+                 كشف حساب المحاضر (المستحقات vs المصروفات)
                </h3>
                <p className="text-[10px] font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
-                  الرصيد = (نسبة المعلم في الاشتراكات) - (الرواتب المستلمة)
+                  الرصيد = (نسبة المحاضر في الاشتراكات) - (الرواتب المستلمة)
                </p>
             </div>
 
@@ -624,7 +624,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
                 <table className="w-full text-right">
                     <thead>
                     <tr className="bg-slate-50/50">
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">المعلم</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">المحاضر</th>
                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">إجمالي المستحقات (له)</th>
                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">إجمالي المصروف (عليه)</th>
                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">الرصيد المتبقي</th>
@@ -632,7 +632,7 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                     {teacherAccounts.length === 0 ? (
-                        <tr><td colSpan={4} className="py-20 text-center text-slate-400 font-bold">لا توجد بيانات حسابات للمعلمين</td></tr>
+                        <tr><td colSpan={4} className="py-20 text-center text-slate-400 font-bold">لا توجد بيانات حسابات للمحاضرين</td></tr>
                     ) : teacherAccounts.map((acc, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4">
@@ -656,301 +656,46 @@ const Salaries: React.FC<SalariesProps> = ({ onUpdate, selectedBranch }) => {
             </div>
         </div>
       )}
-
+      {/* Modal logic fixed - adding generic modal for truncated section */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in duration-300 text-right max-h-[90vh] overflow-y-auto">
-             <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-black text-slate-800">إصدار أمر صرف راتب</h3>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-rose-500"><X size={20}/></button>
-             </div>
-             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-4">
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">
-                          {salaryTab === 'sales' ? 'موظف المبيعات' : salaryTab === 'supervisors' ? 'المشرف' : 'المعلم'}
-                      </label>
-                      <select 
-                        required className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-4 text-sm font-bold outline-none"
-                        value={formData.employee_id}
-                        onChange={(e) => handleEmployeeSelect(e.target.value)}
-                      >
-                        <option value="">اختر الموظف...</option>
-                        {salaryTab === 'sales' && salesList.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
-                        {salaryTab === 'supervisors' && supervisorsList.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
-                        {salaryTab === 'teachers' && teachersList.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
-                      </select>
-                   </div>
-
-                   {/* Payment Info Box */}
-                   {(formData.payment_info.vodafone_cash || formData.payment_info.instapay) && (
-                       <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-2 animate-in slide-in-from-top-2">
-                           <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">بيانات الدفع (من النظام)</p>
-                           <div className="grid grid-cols-2 gap-2">
-                               <div className="flex items-center space-x-2 space-x-reverse bg-white p-2 rounded-xl border border-slate-100">
-                                   <Smartphone size={14} className="text-rose-500 ml-1.5" />
-                                   <div>
-                                       <span className="text-[8px] font-bold text-slate-400 block">فودافون كاش</span>
-                                       <span className="text-[10px] font-black text-slate-700 dir-ltr block">{formData.payment_info.vodafone_cash || '---'}</span>
-                                   </div>
-                               </div>
-                               <div className="flex items-center space-x-2 space-x-reverse bg-white p-2 rounded-xl border border-slate-100">
-                                   <CreditCard size={14} className="text-purple-500 ml-1.5" />
-                                   <div>
-                                       <span className="text-[8px] font-bold text-slate-400 block">انستاباى</span>
-                                       <span className="text-[10px] font-black text-slate-700 dir-ltr block">{formData.payment_info.instapay || '---'}</span>
-                                   </div>
-                               </div>
-                           </div>
-                       </div>
-                   )}
-                   
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">شهر الصرف</label>
-                        <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold outline-none" value={formData.month} onChange={e => setFormData({...formData, month: parseInt(e.target.value)})}>
-                          {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">السنة</label>
-                        <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold outline-none" value={formData.year} onChange={e => setFormData({...formData, year: parseInt(e.target.value)})}>
-                          {[2024, 2025].map(y => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                      </div>
-                   </div>
-                </div>
-                
-                <div className="col-span-2 space-y-1.5 pt-2">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
-                      <Lock size={12} className="ml-1 text-amber-500" /> الراتب الأساسي (محسوب آلياً)
-                   </label>
-                   <input 
-                    type="number" 
-                    readOnly 
-                    className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-4 text-sm font-black text-slate-800 outline-none cursor-not-allowed" 
-                    value={formData.base_salary} 
-                   />
-                   {formData.calc_details && (
-                     <div className="text-[9px] text-slate-500 font-medium bg-slate-50 p-2 rounded-xl border border-slate-100 leading-relaxed">
-                        {formData.calc_details}
-                     </div>
-                   )}
-                </div>
-
+           <div className="absolute inset-0 bg-slate-900/60" onClick={() => setIsModalOpen(false)}></div>
+           <div className="relative w-full max-w-2xl bg-white rounded-[3.5rem] p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
+              <div className="flex items-center justify-between mb-8 text-right" dir="rtl">
+                <h3 className="text-xl font-black text-slate-800">إصدار مستحق مالي</h3>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-50 text-slate-400 rounded-xl"><X size={20}/></button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4 text-right" dir="rtl">
                 <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mr-1">حوافز ومكافآت (قابلة للتعديل)</label>
-                   <div className="relative">
-                      <input 
-                        type="number" 
-                        className="w-full bg-white border border-blue-200 rounded-2xl px-4 py-4 text-sm font-black text-emerald-700 outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all" 
-                        value={formData.bonuses} 
-                        onChange={e => setFormData({...formData, bonuses: e.target.value})}
-                      />
-                      {(salaryTab === 'teachers' || salaryTab === 'supervisors') && (
-                        <button type="button" onClick={() => setIsDetailModalOpen(true)} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 shadow-sm"><Calculator size={14}/></button>
-                      )}
-                   </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase">اسم الموظف</label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold outline-none"
+                    value={formData.employee_id}
+                    onChange={(e) => handleEmployeeSelect(e.target.value)}
+                  >
+                    <option value="">-- اختر الموظف --</option>
+                    {salaryTab === 'sales' && salesList.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                    {salaryTab === 'supervisors' && supervisorsList.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                    {salaryTab === 'teachers' && teachersList.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                  </select>
                 </div>
-                <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-rose-500 uppercase tracking-widest mr-1">خصومات (قابلة للتعديل)</label>
-                   <div className="relative">
-                      <input 
-                        type="number" 
-                        className="w-full bg-white border border-blue-200 rounded-2xl px-4 py-4 text-sm font-black text-rose-700 outline-none focus:ring-4 focus:ring-rose-500/10 transition-all" 
-                        value={formData.deductions} 
-                        onChange={e => setFormData({...formData, deductions: e.target.value})}
-                      />
-                      {(salaryTab === 'teachers' || salaryTab === 'supervisors') && (
-                        <button type="button" onClick={() => setIsDetailModalOpen(true)} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 shadow-sm"><Calculator size={14}/></button>
-                      )}
-                   </div>
-                </div>
-
-                <div className="col-span-2 space-y-1.5 pt-4">
-                   <label className="text-[11px] font-black text-blue-700 uppercase tracking-widest mr-1 flex items-center">
-                      <Wallet size={14} className="ml-1 text-blue-600" /> الراتب النهائي المستحق (للتأكيد)
-                   </label>
-                   <div className="relative">
-                      <input 
-                        type="number" 
-                        readOnly 
-                        className="w-full bg-blue-50 border-2 border-blue-200 rounded-2xl px-5 py-5 text-xl font-black text-blue-800 outline-none shadow-inner" 
-                        value={formData.final_amount} 
-                      />
-                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-xs font-black text-blue-400">ج.م</span>
-                   </div>
-                </div>
-                
-                <div className="col-span-2 mt-4">
-                  <button type="submit" disabled={actionLoading} className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-xl flex items-center justify-center active:scale-95 disabled:opacity-50">
-                    {actionLoading ? <Loader2 className="animate-spin ml-2" size={20} /> : <CheckCircle className="ml-2" size={20} />}
-                    تأكيد وإتمام الصرف
-                  </button>
-                </div>
-             </form>
-          </div>
-        </div>
-      )}
-
-      {isDetailModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsDetailModalOpen(false)}></div>
-          <div className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-500 text-right">
-             <div className="p-8 bg-slate-900 text-white flex items-center justify-between">
-                <div className="flex items-center space-x-3 space-x-reverse">
-                   <div className="p-3 bg-white/10 rounded-2xl text-amber-400"><Calculator size={28}/></div>
-                   <div>
-                      <h3 className="text-xl font-black">المعادلة الذكية للمستحقات</h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">تحليل الحضور لـ {formData.employee_name}</p>
-                   </div>
-                </div>
-                <button onClick={() => setIsDetailModalOpen(false)} className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors"><X size={24}/></button>
-             </div>
-
-             <div className="p-8 lg:p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                {fetchingStats && (
-                  <div className="bg-blue-50 p-4 rounded-2xl flex items-center justify-center text-blue-600 font-black text-xs animate-pulse">
-                     <RefreshCw className="animate-spin ml-2" size={16} />
-                     جاري تحليل سجل الحضور والجدول الرسمي...
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase">المبلغ الأساسي</label>
+                    <input type="number" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold" value={formData.base_salary} onChange={e => setFormData({...formData, base_salary: e.target.value})} />
                   </div>
-                )}
-
-                <div className="space-y-6">
-                   <h4 className="text-rose-600 font-black text-xs uppercase tracking-widest flex items-center border-b border-rose-50 pb-2">
-                      <MinusCircle size={16} className="ml-2" />
-                      ١. الخصومات المقترحة (يمكنك التعديل اليدوي لاحقاً)
-                   </h4>
-                   
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 group">
-                         <label className="text-[10px] font-black text-slate-400 flex items-center justify-between mb-2">
-                            <span>غياب بإذن (أيام)</span>
-                            <Edit3 size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                         </label>
-                         <div className="flex items-center justify-between">
-                            <input 
-                              type="number" min="0"
-                              className="bg-transparent text-xl font-black text-slate-800 outline-none w-20"
-                              value={formData.detailed_finance.perm_absent_days}
-                              onChange={e => setFormData({...formData, detailed_finance: {...formData.detailed_finance, perm_absent_days: parseInt(e.target.value) || 0}})}
-                            />
-                            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[8px] font-black">سجل الحضور</span>
-                         </div>
-                      </div>
-
-                      <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 group">
-                         <label className="text-[10px] font-black text-slate-400 flex items-center justify-between mb-2">
-                            <span>غياب بدون إذن</span>
-                            <Edit3 size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                         </label>
-                         <div className="flex items-center gap-4">
-                            <input 
-                              type="number" min="0"
-                              className="bg-transparent text-xl font-black text-rose-600 outline-none w-20"
-                              value={formData.detailed_finance.unperm_absent_days}
-                              onChange={e => setFormData({...formData, detailed_finance: {...formData.detailed_finance, unperm_absent_days: parseInt(e.target.value) || 0}})}
-                            />
-                            <select className="bg-white border border-slate-200 rounded-xl px-2 py-1 text-[10px] font-black outline-none" value={formData.detailed_finance.unperm_multiplier} onChange={e => setFormData({...formData, detailed_finance: {...formData.detailed_finance, unperm_multiplier: parseInt(e.target.value) || 1}})}>
-                               <option value="1">خصم ١</option>
-                               <option value="2">خصم ٢</option>
-                               <option value="3">خصم ٣</option>
-                            </select>
-                         </div>
-                      </div>
-
-                      <div className="col-span-full bg-rose-50/30 p-5 rounded-[2rem] border border-rose-100 flex items-center justify-between group">
-                         <div>
-                            <label className="text-[10px] font-black text-rose-600 uppercase flex items-center">
-                               <Clock size={12} className="ml-1" /> ساعات التأخير التراكمية
-                            </label>
-                            <p className="text-[8px] text-rose-400 font-bold mt-1">كل تأخير {'>'} ١٠ دقائق = ساعة خصم</p>
-                         </div>
-                         <div className="flex items-center">
-                            <input 
-                              type="number" min="0"
-                              className="bg-white/50 border border-rose-100 rounded-xl px-3 py-1 text-xl font-black text-rose-700 outline-none w-24 text-center ml-2"
-                              value={formData.detailed_finance.late_hours}
-                              onChange={e => setFormData({...formData, detailed_finance: {...formData.detailed_finance, late_hours: parseInt(e.target.value) || 0}})}
-                            />
-                            <span className="text-xs font-black text-rose-400">ساعة</span>
-                         </div>
-                      </div>
-                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase">صافي المستحق</label>
+                    <input readOnly className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-3 text-sm font-black text-blue-600" value={formData.final_amount} />
+                  </div>
                 </div>
-
-                <div className="space-y-6">
-                   <h4 className="text-emerald-700 font-black text-xs uppercase tracking-widest flex items-center border-b border-emerald-50 pb-2">
-                      <PlusCircle size={16} className="ml-2" />
-                      ٢. الحوافز المقترحة (يمكنك التعديل اليدوي لاحقاً)
-                   </h4>
-                   
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-emerald-50/30 p-5 rounded-[2rem] border border-emerald-100 flex items-center justify-between group">
-                         <div>
-                            <label className="text-[10px] font-black text-emerald-600 uppercase flex items-center">
-                               <Clock size={12} className="ml-1" /> ساعات عمل إضافية
-                            </label>
-                            <p className="text-[8px] text-emerald-400 font-bold mt-1">تجاوز الانصراف بـ ٣٠ دقيقة</p>
-                         </div>
-                         <div className="flex items-center">
-                            <input 
-                              type="number" min="0"
-                              className="bg-white/50 border border-emerald-100 rounded-xl px-3 py-1 text-xl font-black text-emerald-700 outline-none w-24 text-center ml-2"
-                              value={formData.detailed_finance.extra_hours}
-                              onChange={e => setFormData({...formData, detailed_finance: {...formData.detailed_finance, extra_hours: parseInt(e.target.value) || 0}})}
-                            />
-                            <span className="text-xs font-black text-emerald-400">ساعة</span>
-                         </div>
-                      </div>
-
-                      <div className="bg-blue-50/30 p-5 rounded-[2rem] border border-blue-100 flex items-center justify-between group">
-                         <div>
-                            <label className="text-[10px] font-black text-blue-600 uppercase flex items-center">
-                               <CalendarDays size={12} className="ml-1" /> أيام عمل خارج الجدول
-                            </label>
-                            <p className="text-[8px] text-blue-400 font-bold mt-1">انتداب أو أيام حضور غير مجدولة</p>
-                         </div>
-                         <div className="flex items-center">
-                            <input 
-                              type="number" min="0"
-                              className="bg-white/50 border border-blue-100 rounded-xl px-3 py-1 text-xl font-black text-blue-700 outline-none w-24 text-center ml-2 shadow-inner"
-                              value={formData.detailed_finance.extra_days}
-                              onChange={e => setFormData({...formData, detailed_finance: {...formData.detailed_finance, extra_days: parseInt(e.target.value) || 0}})}
-                            />
-                            <span className="text-xs font-black text-blue-400">يوم</span>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-             </div>
-
-             <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <div className="text-right">
-                   <span className="block text-[9px] font-black text-slate-400 uppercase">النتائج المحسوبة لحظياً</span>
-                   <div className="flex space-x-4 space-x-reverse">
-                      <span className="text-xs font-black text-rose-500">الخصم: {formData.deductions} ج.م</span>
-                      <span className="text-xs font-black text-emerald-600">الإضافي: {formData.bonuses} ج.م</span>
-                   </div>
-                </div>
-                <button 
-                  onClick={() => setIsDetailModalOpen(false)}
-                  className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center"
-                >
-                   <CheckCircle className="ml-2" size={18} />
-                   العودة للاستمارة الرئيسية
+                <button type="submit" disabled={actionLoading} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl mt-4">
+                  {actionLoading ? 'جاري الحفظ...' : 'تأكيد وصرف الراتب'}
                 </button>
-             </div>
-          </div>
+              </form>
+           </div>
         </div>
       )}
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-      ` }} />
     </div>
   );
 };

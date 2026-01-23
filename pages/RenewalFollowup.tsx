@@ -173,11 +173,11 @@ const RenewalFollowup: React.FC = () => {
                   <User size={16} />
                </div>
                <select 
-                  className="bg-transparent text-slate-600 text-xs font-black outline-none cursor-pointer w-full sm:w-48 py-2"
+                  className="bg-transparent text-slate-600 text-xs font-black outline-none cursor-pointer w-full md:w-48 py-2"
                   value={filterTeacher}
                   onChange={(e) => setFilterTeacher(e.target.value)}
                >
-                  <option value="الكل">كافة المعلمين</option>
+                  <option value="الكل">كافة المحاضرين</option>
                   {teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
                </select>
             </div>
@@ -258,103 +258,63 @@ const RenewalFollowup: React.FC = () => {
                </div>
             </div>
          ))}
-
-         {renewalStats.length === 0 && (
-            <div className="py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-               <BarChart3 size={48} className="text-slate-200 mx-auto mb-4" />
-               <p className="text-slate-400 font-bold">لا توجد بيانات للعرض حالياً</p>
-            </div>
-         )}
       </div>
 
-      {/* Students List Modal for Editing Status */}
+      {/* Selected Teacher Student List Modal */}
       {selectedTeacherForEdit && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedTeacherForEdit(null)}></div>
-          <div className="relative w-full max-w-3xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[85vh]">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-black text-slate-800">قائمة طلاب: {selectedTeacherForEdit.full_name}</h3>
-                <p className="text-xs font-bold text-slate-400 mt-1">تحديث حالة التجديد للشهر القادم</p>
-              </div>
-              <button onClick={() => setSelectedTeacherForEdit(null)} className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:text-rose-500 transition-colors">
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-              <div className="space-y-3">
-                {currentTeacherStudents.length === 0 ? (
-                  <div className="text-center py-10 text-slate-400 font-bold">لا يوجد طلاب مسجلين لهذا المعلم</div>
-                ) : (
-                  currentTeacherStudents.map(student => (
-                    <div key={student.id} className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-blue-200 transition-colors">
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white ${
-                          student.gender === 'ذكر' ? 'bg-blue-500' : 'bg-rose-500'
-                        }`}>
-                          {student.name[0]}
-                        </div>
+         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedTeacherForEdit(null)}></div>
+            <div className="relative w-full max-w-3xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[85vh]">
+               <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800">قائمة طلاب المحاضر: {selectedTeacherForEdit.full_name}</h3>
+                    <p className="text-xs text-slate-400 font-bold mt-1 uppercase">تحديث حالات التجديد الفردية</p>
+                  </div>
+                  <button onClick={() => setSelectedTeacherForEdit(null)} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-rose-500"><X size={24}/></button>
+               </div>
+               
+               <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {currentTeacherStudents.length === 0 ? (
+                    <p className="text-center py-10 text-slate-400 font-bold">لا يوجد طلاب مسجلين لهذا المحاضر.</p>
+                  ) : (
+                    currentTeacherStudents.map(student => (
+                      <div key={student.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
                         <div>
-                          <h4 className="font-black text-slate-800 text-sm">{student.name}</h4>
-                          <span className="text-[10px] font-bold text-slate-400">{student.level}</span>
+                          <h4 className="text-sm font-black text-slate-800">{student.name}</h4>
+                          <span className="text-[9px] font-bold text-slate-400">آخر حالة: {
+                            student.renewal_status === 'yes' ? 'سيجدد' : 
+                            student.renewal_status === 'no' ? 'لن يجدد' : 'غير محدد'
+                          }</span>
+                        </div>
+                        <div className="flex gap-2">
+                           <button 
+                             onClick={() => handleStatusUpdate(student.id, 'yes')}
+                             disabled={updatingId === student.id}
+                             className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${student.renewal_status === 'yes' ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-emerald-600 border border-emerald-100 hover:bg-emerald-50'}`}
+                           >
+                             سيجدد
+                           </button>
+                           <button 
+                             onClick={() => handleStatusUpdate(student.id, 'no')}
+                             disabled={updatingId === student.id}
+                             className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${student.renewal_status === 'no' ? 'bg-rose-600 text-white shadow-md' : 'bg-white text-rose-600 border border-rose-100 hover:bg-rose-50'}`}
+                           >
+                             لن يجدد
+                           </button>
+                           <button 
+                             onClick={() => handleStatusUpdate(student.id, 'undecided')}
+                             disabled={updatingId === student.id}
+                             className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${(!student.renewal_status || student.renewal_status === 'undecided') ? 'bg-slate-600 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-100 hover:bg-slate-100'}`}
+                           >
+                             متبقي
+                           </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        {updatingId === student.id ? (
-                          <Loader2 className="animate-spin text-slate-400" size={20} />
-                        ) : (
-                          <>
-                            <button 
-                              onClick={() => handleStatusUpdate(student.id, 'yes')}
-                              className={`flex items-center px-4 py-2 rounded-xl text-[10px] font-black transition-all ${
-                                student.renewal_status === 'yes' 
-                                ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-100' 
-                                : 'bg-white text-slate-400 border border-slate-200 hover:text-emerald-600 hover:border-emerald-200'
-                              }`}
-                            >
-                              <Check size={14} className="ml-1" /> جدد
-                            </button>
-                            
-                            <button 
-                              onClick={() => handleStatusUpdate(student.id, 'no')}
-                              className={`flex items-center px-4 py-2 rounded-xl text-[10px] font-black transition-all ${
-                                student.renewal_status === 'no' 
-                                ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-100' 
-                                : 'bg-white text-slate-400 border border-slate-200 hover:text-rose-600 hover:border-rose-200'
-                              }`}
-                            >
-                              <X size={14} className="ml-1" /> رفض
-                            </button>
-
-                            <button 
-                              onClick={() => handleStatusUpdate(student.id, 'undecided')}
-                              className={`flex items-center px-3 py-2 rounded-xl text-[10px] font-black transition-all ${
-                                !student.renewal_status || student.renewal_status === 'undecided'
-                                ? 'bg-slate-200 text-slate-600' 
-                                : 'bg-white text-slate-300 border border-slate-200 hover:bg-slate-50'
-                              }`}
-                              title="لم يحدد بعد"
-                            >
-                              <HelpCircle size={14} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                    ))
+                  )}
+               </div>
             </div>
-            
-            <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
-               <button onClick={() => setSelectedTeacherForEdit(null)} className="bg-blue-600 text-white px-10 py-3 rounded-2xl font-black text-sm shadow-xl hover:bg-blue-700 transition-all">
-                 إغلاق وحفظ
-               </button>
-            </div>
-          </div>
-        </div>
+         </div>
       )}
     </div>
   );

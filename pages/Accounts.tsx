@@ -40,9 +40,151 @@ import {
   Calendar,
   Filter
 } from 'lucide-react';
+// Correct default import since Salaries now has export default
 import Salaries from './Salaries';
 import StudentExpenses from './StudentExpenses';
 import { db, supabase } from '../services/supabase';
+
+// إضافة مكون OtherExpensesView المفقود لإصلاح الخطأ
+const OtherExpensesView: React.FC<{ onUpdate?: () => void, selectedBranch: string }> = ({ onUpdate, selectedBranch }) => {
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    description: '',
+    amount: '',
+    category: 'نثريات',
+    branch: 'الرئيسي'
+  });
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const data = await db.finance.otherExpenses.getAll();
+      setExpenses(data || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchExpenses(); }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.description || !formData.amount) return;
+    setActionLoading(true);
+    try {
+      await db.finance.otherExpenses.create({
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        category: formData.category,
+        branch: formData.branch,
+        date: new Date().toISOString()
+      });
+      await fetchExpenses();
+      onUpdate?.();
+      setIsModalOpen(false);
+      setFormData({ description: '', amount: '', category: 'نثريات', branch: 'الرئيسي' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المصروف؟')) return;
+    try {
+      await db.finance.otherExpenses.delete(id);
+      await fetchExpenses();
+      onUpdate?.();
+    } catch (err) {
+      alert('فشل الحذف');
+    }
+  };
+
+  const filtered = expenses.filter(e => selectedBranch === 'الكل' || e.branch === selectedBranch);
+
+  return (
+    <div className="space-y-6 text-right" dir="rtl">
+       <div className="flex justify-between items-center">
+          <h3 className="text-xl font-black text-slate-800">سجل المصروفات التشغيلية</h3>
+          <button onClick={() => setIsModalOpen(true)} className="bg-rose-600 text-white px-6 py-3 rounded-xl font-black text-xs flex items-center shadow-lg">
+             <Plus size={16} className="ml-2" /> إضافة مصروف جديد
+          </button>
+       </div>
+
+       <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+             <table className="w-full text-right">
+                <thead className="bg-slate-50">
+                   <tr>
+                      <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">البيان / الوصف</th>
+                      <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">الفئة</th>
+                      <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">المبلغ</th>
+                      <th className="p-4"></th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                   {loading ? (
+                      <tr><td colSpan={4} className="p-10 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" size={32}/></td></tr>
+                   ) : filtered.length === 0 ? (
+                      <tr><td colSpan={4} className="p-10 text-center text-slate-400 font-bold">لا توجد مصروفات مسجلة</td></tr>
+                   ) : filtered.map(exp => (
+                      <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
+                         <td className="p-4 text-xs font-black text-slate-700">{exp.description}</td>
+                         <td className="p-4 text-[10px] font-bold text-slate-400">{exp.category}</td>
+                         <td className="p-4 text-xs font-black text-rose-600 text-center">-{Number(exp.amount).toLocaleString()} ج.م</td>
+                         <td className="p-4 text-left">
+                            <button onClick={() => handleDelete(exp.id)} className="p-2 text-slate-200 hover:text-rose-500 transition-colors"><Trash2 size={16}/></button>
+                         </td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+          </div>
+       </div>
+
+       {isModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+             <div className="relative w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in duration-300">
+                <div className="flex items-center justify-between mb-6">
+                   <h3 className="text-xl font-black text-slate-800">تسجيل مصروف جديد</h3>
+                   <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-rose-500"><X size={24}/></button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4 text-right">
+                   <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase">وصف المصروف</label>
+                      <input required className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-rose-500/10" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="مثال: فاتورة كهرباء شهر 5" />
+                   </div>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                         <label className="text-[10px] font-black text-slate-400 uppercase">المبلغ</label>
+                         <input required type="number" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-[10px] font-black text-slate-400 uppercase">الفئة</label>
+                         <select className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold outline-none" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                            <option value="نثريات">نثريات</option>
+                            <option value="إيجار">إيجار</option>
+                            <option value="كهرباء/مياه">كهرباء/مياه</option>
+                            <option value="أدوات مكتبية">أدوات مكتبية</option>
+                            <option value="أخرى">أخرى</option>
+                         </select>
+                      </div>
+                   </div>
+                   <button disabled={actionLoading} className="w-full bg-rose-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-rose-700 transition-all flex items-center justify-center">
+                      {actionLoading ? <Loader2 size={18} className="ml-2 animate-spin"/> : <Check size={18} className="ml-2"/>}
+                      اعتماد المصروف
+                   </button>
+                </form>
+             </div>
+          </div>
+       )}
+    </div>
+  );
+};
 
 const Accounts: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'salaries' | 'students' | 'expenses' | 'monthly_report'>('monthly_report');
@@ -136,7 +278,7 @@ const Accounts: React.FC = () => {
       <div className="flex space-x-2 space-x-reverse overflow-x-auto pb-4 no-scrollbar">
         {[
           { id: 'monthly_report', label: 'التقرير الشهري', icon: FileText },
-          { id: 'salaries', label: 'الرواتب والتعويضات', icon: DollarSign },
+          { id: 'salaries', label: 'رواتب المحاضرين', icon: DollarSign },
           { id: 'students', label: 'اشتراكات الطلاب', icon: Wallet },
           { id: 'expenses', label: 'مصروفات إدارية', icon: TrendingDownIcon },
         ].map((tab) => (
@@ -221,7 +363,7 @@ const MonthlyReportView = () => {
     // إجمالي الدخل من الاشتراكات
     const totalIncome = data.income.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     
-    // 1. حساب "حساب المعلمين" وهو نسب المعلمين من الاشتراكات (وليس الرواتب المصروفة)
+    // 1. حساب "حساب المحاضرين" وهو نسب المحاضرين من الاشتراكات (وليس الرواتب المصروفة)
     const totalTeacherAccounts = data.income.reduce((sum, i) => sum + (Number(i.teacher_ratio) || 0), 0);
     
     // 2. حساب الرواتب الإدارية (أي راتب لشخص دوره ليس "teacher")
@@ -232,7 +374,7 @@ const MonthlyReportView = () => {
     // 3. المصروفات الإدارية الأخرى
     const totalExpenses = data.expenses.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     
-    // إجمالي المصروفات (حساب المعلمين + رواتب إدارية + مصروفات تشغيل)
+    // إجمالي المصروفات (حساب المحاضرين + رواتب إدارية + مصروفات تشغيل)
     const totalOut = totalTeacherAccounts + adminSalaries + totalExpenses;
     
     // صافي الدخل
@@ -298,7 +440,7 @@ const MonthlyReportView = () => {
                      <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">إجمالي المصروفات (الصافي)</p>
                      <h4 className="text-3xl font-black text-rose-700">{stats.totalOut.toLocaleString()} <span className="text-sm">ج.م</span></h4>
                      <p className="text-[9px] font-bold text-rose-400 mt-1">
-                        (معلمين: {stats.totalTeacherAccounts.toLocaleString()} + إداري: {stats.adminSalaries.toLocaleString()} + تشغيل: {stats.totalExpenses.toLocaleString()})
+                        (محاضرين: {stats.totalTeacherAccounts.toLocaleString()} + إداري: {stats.adminSalaries.toLocaleString()} + تشغيل: {stats.totalExpenses.toLocaleString()})
                      </p>
                   </div>
                   <ArrowDownCircle className="absolute -bottom-4 -left-4 text-rose-200 opacity-50 group-hover:scale-110 transition-transform" size={100} />
@@ -366,8 +508,8 @@ const MonthlyReportView = () => {
                            {/* Teacher Accounts Aggregate */}
                            {stats.totalTeacherAccounts > 0 && (
                               <tr className="hover:bg-slate-50/50 bg-rose-50/20">
-                                 <td className="p-4 text-xs font-black text-slate-800">مستحقات المعلمين (حساب النسب)</td>
-                                 <td className="p-4 text-[10px] font-bold text-slate-400">حساب معلمين</td>
+                                 <td className="p-4 text-xs font-black text-slate-800">مستحقات المحاضرين (حساب النسب)</td>
+                                 <td className="p-4 text-[10px] font-bold text-slate-400">حساب محاضرين</td>
                                  <td className="p-4 text-xs font-black text-rose-600 text-center">-{stats.totalTeacherAccounts.toLocaleString()}</td>
                               </tr>
                            )}
@@ -399,166 +541,6 @@ const MonthlyReportView = () => {
                </div>
             </div>
          </>
-      )}
-    </div>
-  );
-};
-
-const OtherExpensesView = ({ onUpdate, selectedBranch }: { onUpdate: () => void, selectedBranch: string }) => {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [formData, setFormData] = useState({ 
-    description: '', 
-    amount: '', 
-    category: 'الموظفين', 
-    branch: 'الرئيسي',
-    date: new Date().toISOString().split('T')[0]
-  });
-
-  // قائمة التصنيفات الجديدة المطلوبة
-  const EXPENSE_CATEGORIES = [
-    { id: 'الموظفين', label: 'الموظفين', icon: User },
-    { id: 'سيلز', label: 'سيلز', icon: TrendingUp },
-    { id: 'اشراف', label: 'اشراف', icon: Briefcase },
-    { id: 'كونتنت كريتور', label: 'كونتنت كريتور', icon: PenTool },
-    { id: 'اعلانات', label: 'اعلانات', icon: Megaphone },
-    { id: 'تصاميم', label: 'تصاميم', icon: Package },
-    { id: 'فيديوهات', label: 'فيديوهات', icon: Video },
-  ];
-
-  useEffect(() => { fetchData(); }, []);
-  const fetchData = async () => {
-    setLoading(true);
-    const data = await db.finance.otherExpenses.getAll();
-    setItems(data);
-    setLoading(false);
-  };
-
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setActionLoading(true);
-    try {
-      await db.finance.otherExpenses.create({ 
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        category: formData.category,
-        branch: 'الرئيسي', 
-        date: new Date(formData.date).toISOString()
-      });
-      fetchData(); onUpdate(); setIsModalOpen(false); 
-      setFormData({ 
-        description: '', 
-        amount: '', 
-        category: 'الموظفين', 
-        branch: 'الرئيسي', 
-        date: new Date().toISOString().split('T')[0] 
-      });
-    } catch (err) { alert('فشل في تسجيل المصروف'); } finally { setActionLoading(false); }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-         <h3 className="text-xl font-black text-slate-800">سجل المصروفات التشغيلية</h3>
-         <button onClick={() => setIsModalOpen(true)} className="bg-rose-600 text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center shadow-xl hover:bg-rose-700 transition-all">
-           <Plus size={18} className="ml-2" /> تسجيل مصروف إداري
-         </button>
-      </div>
-      
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
-        <table className="w-full text-right">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="p-5 text-[10px] font-black text-slate-400 uppercase">وصف المصروف</th>
-              <th className="p-5 text-[10px] font-black text-slate-400 uppercase">المبلغ</th>
-              <th className="p-5 text-[10px] font-black text-slate-400 uppercase text-center">التصنيف</th>
-              <th className="p-5 text-[10px] font-black text-slate-400 uppercase text-center">التاريخ</th>
-              <th className="p-5"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {loading ? (
-              <tr><td colSpan={5} className="p-10 text-center"><Loader2 className="animate-spin mx-auto text-slate-300" /></td></tr>
-            ) : items.length === 0 ? (
-              <tr><td colSpan={5} className="p-10 text-center text-slate-400 font-bold">لا توجد مصروفات مسجلة</td></tr>
-            ) : items.map(item => (
-              <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                <td className="p-5 text-sm font-black text-slate-800">{item.description}</td>
-                <td className="p-5 text-sm font-black text-rose-600">{Number(item.amount).toLocaleString()} ج.م</td>
-                <td className="p-5 text-center">
-                    <span className="bg-slate-100 px-3 py-1 rounded-full text-[9px] font-black text-slate-500 uppercase flex items-center justify-center w-fit mx-auto">
-                        {item.category}
-                    </span>
-                </td>
-                <td className="p-5 text-[11px] font-bold text-slate-400 text-center">{new Date(item.date).toLocaleDateString('ar-EG')}</td>
-                <td className="p-5 text-left"><button onClick={() => db.finance.otherExpenses.delete(item.id).then(() => { fetchData(); onUpdate(); })} className="text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={16}/></button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl animate-in zoom-in duration-300 text-right">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black">تسجيل مصروف إداري</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-rose-500"><X size={20}/></button>
-            </div>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 mr-2 uppercase">تاريخ المصروف</label>
-                <div className="relative">
-                  <CalendarDays className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                  <input 
-                    type="date" 
-                    required 
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-rose-500/10 text-slate-700" 
-                    value={formData.date} 
-                    onChange={e => setFormData({...formData, date: e.target.value})} 
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 mr-2 uppercase">وصف المصروف</label>
-                <input type="text" placeholder="مثال: إعلان فيسبوك، راتب سيلز..." required className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-500/10" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-              </div>
-              
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 mr-2 uppercase">المبلغ الصافي (ج.م)</label>
-                <input type="number" step="0.01" placeholder="0.00" required className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-rose-500/10" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
-              </div>
-              
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 mr-2 uppercase">التصنيف</label>
-                <div className="grid grid-cols-2 gap-2">
-                    {EXPENSE_CATEGORIES.map(cat => (
-                        <button
-                            type="button"
-                            key={cat.id}
-                            onClick={() => setFormData({...formData, category: cat.id})}
-                            className={`flex items-center justify-center p-3 rounded-xl border text-[10px] font-black transition-all ${
-                                formData.category === cat.id 
-                                ? 'bg-rose-600 text-white border-rose-600 shadow-lg' 
-                                : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-white'
-                            }`}
-                        >
-                            <cat.icon size={12} className="ml-1.5" />
-                            {cat.label}
-                        </button>
-                    ))}
-                </div>
-              </div>
-
-              <button disabled={actionLoading} className="w-full bg-rose-600 text-white py-5 rounded-2xl font-black shadow-xl mt-4 active:scale-95 disabled:opacity-50">
-                {actionLoading ? <Loader2 className="animate-spin mx-auto" size={24} /> : 'تأكيد خصم المصروف'}
-              </button>
-            </form>
-          </div>
-        </div>
       )}
     </div>
   );
