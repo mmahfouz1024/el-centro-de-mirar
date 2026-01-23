@@ -1,0 +1,7 @@
+{
+  "name": "El Centro de Mirar",
+  "description": "El primer Centro para enseñar la lengua española en Zagazig",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
