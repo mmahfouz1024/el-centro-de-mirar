@@ -92,6 +92,7 @@ ALTER TABLE public.students ADD COLUMN IF NOT EXISTS student_number TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS name TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS age INTEGER;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE public.students ADD COLUMN IF NOT EXISTS enrolled_language TEXT; -- الحقل الجديد للغة
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS birth_date DATE;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS join_date TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS gender TEXT;
@@ -375,16 +376,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
             </div>
             <button onClick={() => setActionStatus({ type: null, message: '' })} className="hover:rotate-90 transition-transform"><X size={18}/></button>
           </div>
-          
-          {actionStatus.type === 'error' && (actionStatus.message.includes('RLS') || actionStatus.message.includes('Bucket')) && (
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-rose-200 shadow-xl space-y-4">
-               <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-black text-rose-900 flex items-center">
-                    <Terminal size={16} className="ml-2" /> تنبيه: تأكد من إعدادات التخزين (Storage Bucket) وسياسات الأمان في Supabase.
-                  </p>
-               </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -469,7 +460,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
       {/* SQL Script Modal */}
       {isSqlModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => setIsSqlModalOpen(false)}></div>
+           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setIsSqlModalOpen(false)}></div>
            <div className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[85vh]">
               <div className="p-6 bg-slate-900 text-white flex items-center justify-between shadow-lg z-10">
                  <div className="flex items-center gap-3">
@@ -503,11 +494,6 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
                     </code>
                  </div>
               </div>
-
-              <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500">
-                 <span>يرجى الحذر عند تنفيذ أوامر الحذف (DROP)</span>
-                 <span>v2.5 System</span>
-              </div>
            </div>
         </div>
       )}
@@ -515,7 +501,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
       {/* Teacher Update SQL Modal */}
       {isTeacherSqlModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => setIsTeacherSqlModalOpen(false)}></div>
+           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setIsTeacherSqlModalOpen(false)}></div>
            <div className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[85vh]">
               <div className="p-6 bg-blue-900 text-white flex items-center justify-between shadow-lg z-10">
                  <div className="flex items-center gap-3">
@@ -555,7 +541,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
 
       {isRestoreModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => !loading && setIsRestoreModalOpen(false)}></div>
+           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => !loading && setIsRestoreModalOpen(false)}></div>
            <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-10 animate-in zoom-in duration-300 text-right">
               <div className="flex items-center justify-between mb-8">
                  <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl"><History size={28} /></div>
@@ -574,7 +560,7 @@ const DatabasePage: React.FC<DatabasePageProps> = ({ user }) => {
 
       {isResetModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => !loading && setIsResetModalOpen(false)}></div>
+           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => !loading && setIsResetModalOpen(false)}></div>
            <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-10 animate-in zoom-in duration-300 text-right border-4 border-rose-100">
               <h3 className="text-3xl font-black text-rose-600 mb-4 tracking-tight">تحذير: تصفير شامل!</h3>
               <p className="text-rose-800 font-bold text-sm leading-relaxed mb-8">سيتم حذف كافة سجلات الطلاب والمالية والحلقات نهائياً (الحسابات ستبقى). لا يمكن التراجع عن هذا الإجراء.</p>
