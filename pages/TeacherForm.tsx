@@ -12,7 +12,8 @@ import {
   Lock,
   Briefcase,
   Coins,
-  Languages
+  Languages,
+  AlertCircle
 } from 'lucide-react';
 import { db } from '../services/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -25,6 +26,7 @@ const TeacherForm: React.FC = () => {
   const editingTeacher = location.state?.data;
 
   const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -35,9 +37,8 @@ const TeacherForm: React.FC = () => {
     instapay: '',
     username: '',
     password: '',
-    hourly_rate: '', // New field
-    specialization: 'اسبانى', // Default language
-    // Hidden default fields
+    hourly_rate: '', 
+    specialization: 'اسبانى', 
     role: 'teacher',
     avatar: '',
     branch: 'الرئيسي' 
@@ -65,12 +66,21 @@ const TeacherForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    // التحقق من إدخال سعر الساعة (إلزامي)
+    if (!formData.hourly_rate || parseFloat(formData.hourly_rate) <= 0) {
+      setError('عذراً، يجب تحديد سعر الساعة للمحاضر أولاً لاعتماد التسجيل.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setActionLoading(true);
     try {
       const payload = {
         ...formData,
         age: parseInt(formData.age) || 0,
-        hourly_rate: parseFloat(formData.hourly_rate) || 0,
+        hourly_rate: parseFloat(formData.hourly_rate),
         avatar: formData.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${formData.full_name}`,
       };
 
@@ -81,7 +91,7 @@ const TeacherForm: React.FC = () => {
       }
       navigate('/teachers');
     } catch (error: any) {
-      alert('حدث خطأ أثناء حفظ البيانات: ' + (error.message || 'يرجى مراجعة الاتصال'));
+      setError('حدث خطأ أثناء حفظ البيانات: ' + (error.message || 'يرجى مراجعة الاتصال'));
     } finally {
       setActionLoading(false);
     }
@@ -101,6 +111,13 @@ const TeacherForm: React.FC = () => {
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">إدارة بيانات عضو هيئة التدريس</p>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center text-rose-600 animate-shake">
+          <AlertCircle size={20} className="ml-3 shrink-0" />
+          <p className="text-xs font-black">{error}</p>
+        </div>
+      )}
 
       <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 p-8 lg:p-12">
         <form onSubmit={handleSubmit} className="space-y-12">
@@ -165,32 +182,11 @@ const TeacherForm: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. بيانات الحساب */}
-          <div className="space-y-6">
-            <h4 className="text-amber-600 font-black text-xs uppercase tracking-widest flex items-center border-b border-amber-50 pb-2">
-              <Fingerprint size={16} className="ml-2" />
-              ٣. بيانات الدخول
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">اسم المستخدم</label>
-                <input type="text" required className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">كلمة المرور</label>
-                <div className="relative">
-                  <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                  <input type="text" required className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-bold outline-none" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. التخصص وسعر الساعة */}
+          {/* 4. التخصص وسعر الساعة (تم تقديمها لأهميتها) */}
           <div className="space-y-6">
             <h4 className="text-purple-700 font-black text-xs uppercase tracking-widest flex items-center border-b border-purple-50 pb-2">
               <Languages size={16} className="ml-2" />
-              ٤. التخصص والجانب المالي
+              ٣. التخصص والجانب المالي (إلزامي)
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-1.5">
@@ -208,18 +204,43 @@ const TeacherForm: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">سعر الساعة للمحاضر (ج.م)</label>
+                <label className="text-[10px] font-black text-rose-600 uppercase tracking-widest mr-1 flex items-center">
+                  <Coins size={12} className="ml-1" /> سعر الساعة للمحاضر (ج.م) *
+                </label>
                 <div className="relative">
                   <Coins className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500" size={18} />
                   <input 
                     type="number" 
                     required 
                     step="0.01"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-purple-500/10 transition-all" 
-                    placeholder="0.00"
+                    min="1"
+                    className="w-full bg-rose-50/30 border border-rose-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-black text-slate-800 outline-none focus:ring-4 focus:ring-rose-500/10 transition-all placeholder:font-normal" 
+                    placeholder="يجب إدخال سعر الساعة هنا..."
                     value={formData.hourly_rate} 
                     onChange={e => setFormData({...formData, hourly_rate: e.target.value})} 
                   />
+                </div>
+                <p className="text-[9px] font-bold text-slate-400 mt-1 mr-1">* هذا الحقل ضروري لحساب مستحقات المحاضر تلقائياً.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. بيانات الحساب */}
+          <div className="space-y-6">
+            <h4 className="text-amber-600 font-black text-xs uppercase tracking-widest flex items-center border-b border-amber-50 pb-2">
+              <Fingerprint size={16} className="ml-2" />
+              ٤. بيانات الدخول
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">اسم المستخدم</label>
+                <input type="text" required className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">كلمة المرور</label>
+                <div className="relative">
+                  <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <input type="text" required className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
                 </div>
               </div>
             </div>
