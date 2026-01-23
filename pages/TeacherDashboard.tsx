@@ -43,7 +43,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
 
   const shortcuts = [
     { label: 'مستحقاتي', icon: Wallet, path: '/my-earnings', color: 'emerald' },
-    { label: 'سجل الحلقات', icon: BookOpen, path: '/classes', color: 'blue' },
+    { label: 'سجل المحاضرات', icon: BookOpen, path: '/classes', color: 'blue' },
     { label: 'قائمة طلابي', icon: Users, path: '/students', color: 'purple' },
     { label: 'ملفي الشخصي', icon: User, path: '/profile', color: 'amber' },
   ];
@@ -204,7 +204,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <p className="text-emerald-200 font-bold">لا توجد حلقات مسندة إليك حالياً</p>
+                    <p className="text-emerald-200 font-bold">لا توجد محاضرات مسندة إليك حالياً</p>
                 </div>
             )}
         </div>
@@ -235,12 +235,12 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
       {loading ? (
         <div className="py-20 text-center text-slate-400">
            <Loader2 className="animate-spin mx-auto mb-2" size={40} />
-           <p className="text-xs font-bold uppercase tracking-widest">جاري تحضير الفصل...</p>
+           <p className="text-xs font-bold uppercase tracking-widest">جاري تحضير المحاضرة...</p>
         </div>
       ) : students.length === 0 ? (
         <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center">
            <Users size={48} className="mx-auto text-slate-300 mb-4" />
-           <p className="text-slate-400 font-bold">هذه الحلقة لا تحتوي على طلاب بعد</p>
+           <p className="text-slate-400 font-bold">هذه المحاضرة لا تحتوي على طلاب بعد</p>
         </div>
       ) : (
         <>
