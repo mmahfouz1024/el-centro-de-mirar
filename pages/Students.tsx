@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   Smartphone,
   Calendar,
-  Layers
+  Layers,
+  MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/supabase';
@@ -30,8 +31,11 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTeacher, setFilterTeacher] = useState('الكل');
   const [filterLanguage, setFilterLanguage] = useState('الكل');
+  const [filterCountry, setFilterCountry] = useState('الكل');
+  const [filterSupervisor, setFilterSupervisor] = useState('الكل');
 
   const isTeacher = user?.role === 'teacher';
+  const isManager = user?.role === 'manager';
 
   useEffect(() => {
     fetchStudents();
@@ -59,6 +63,13 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
   };
 
   const teachersList = useMemo(() => profiles.filter(p => p.role === 'teacher'), [profiles]);
+  const supervisorsList = useMemo(() => profiles.filter(p => p.role === 'supervisor' || p.role === 'general_supervisor' || p.role === 'manager'), [profiles]);
+  
+  const countriesList = useMemo(() => {
+    const countries = students.map(s => s.country).filter(Boolean);
+    return Array.from(new Set(countries)).sort();
+  }, [students]);
+
   const languages = ['اسبانى', 'انجليزى', 'المانى', 'فرنساوى', 'ايطالى'];
 
   const handleDelete = async (id: string) => {
@@ -76,9 +87,12 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
       const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.student_number && s.student_number.includes(searchTerm));
       const matchesTeacher = filterTeacher === 'الكل' || s.teacher_name === filterTeacher;
       const matchesLanguage = filterLanguage === 'الكل' || s.enrolled_language === filterLanguage;
-      return matchesSearch && matchesTeacher && matchesLanguage;
+      const matchesCountry = filterCountry === 'الكل' || s.country === filterCountry;
+      const matchesSupervisor = filterSupervisor === 'الكل' || s.supervisor_name === filterSupervisor;
+      
+      return matchesSearch && matchesTeacher && matchesLanguage && matchesCountry && matchesSupervisor;
     });
-  }, [students, searchTerm, filterTeacher, filterLanguage]);
+  }, [students, searchTerm, filterTeacher, filterLanguage, filterCountry, filterSupervisor]);
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 text-right">
@@ -104,8 +118,8 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
       </div>
 
       {/* Tools Section */}
-      <div className="bg-gradient-to-br from-white via-white to-slate-50 p-6 rounded-3xl border border-slate-200 custom-shadow flex flex-col xl:flex-row gap-6">
-         <div className="relative flex-1">
+      <div className="bg-gradient-to-br from-white via-white to-slate-50 p-6 rounded-3xl border border-slate-200 custom-shadow space-y-6">
+         <div className="relative">
             <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input 
               type="text" 
@@ -116,7 +130,8 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
             />
          </div>
          
-         <div className="flex flex-col sm:flex-row items-center gap-4">
+         <div className="flex flex-wrap items-center gap-4">
+            {/* Language Filter */}
             <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                <div className="p-2 bg-white rounded-xl shadow-sm text-blue-600"><Layers size={16} /></div>
                <select 
@@ -129,6 +144,35 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                </select>
             </div>
 
+            {/* Country Filter */}
+            <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+               <div className="p-2 bg-white rounded-xl shadow-sm text-emerald-600"><Globe size={16} /></div>
+               <select 
+                  className="bg-transparent text-slate-600 text-[11px] font-black outline-none cursor-pointer px-3 min-w-[120px]"
+                  value={filterCountry}
+                  onChange={(e) => setFilterCountry(e.target.value)}
+               >
+                  <option value="الكل">كل الدول</option>
+                  {countriesList.map(c => <option key={c} value={c}>{c}</option>)}
+               </select>
+            </div>
+
+            {/* Supervisor Filter (Non-teachers only) */}
+            {!isTeacher && (
+              <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                 <div className="p-2 bg-white rounded-xl shadow-sm text-purple-600"><ShieldCheck size={16} /></div>
+                 <select 
+                    className="bg-transparent text-slate-600 text-[11px] font-black outline-none cursor-pointer px-3 min-w-[140px]"
+                    value={filterSupervisor}
+                    onChange={(e) => setFilterSupervisor(e.target.value)}
+                 >
+                    <option value="الكل">جميع المشرفين</option>
+                    {supervisorsList.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>)}
+                 </select>
+              </div>
+            )}
+
+            {/* Teacher Filter (Non-teachers only) */}
             {!isTeacher && (
               <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                  <div className="p-2 bg-white rounded-xl shadow-sm text-amber-500"><User size={16} /></div>
@@ -176,7 +220,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                     </div>
 
                     <h4 className="text-base font-black text-slate-800 mb-1 line-clamp-1">{student.name}</h4>
-                    <div className="flex items-center gap-2 mb-6">
+                    <div className="flex flex-wrap items-center gap-2 mb-6">
                        <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest">كود: {student.student_number}</span>
                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${student.enrolled_language ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
                          {student.enrolled_language || 'عام'}
@@ -187,6 +231,10 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                        <div className="flex items-center text-[11px] font-bold text-slate-500 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
                           <User size={12} className="ml-2 text-blue-500" />
                           {student.age} سنة • {student.gender}
+                       </div>
+                       <div className="flex items-center text-[11px] font-bold text-slate-500 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
+                          <MapPin size={12} className="ml-2 text-rose-500" />
+                          {student.country}
                        </div>
                        <div className="flex items-center text-[11px] font-bold text-slate-500 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
                           <Smartphone size={12} className="ml-2 text-emerald-500" />
