@@ -20,7 +20,11 @@ import {
   ArrowUpRight,
   Sparkles,
   Target,
-  Gem
+  Gem,
+  Globe,
+  Languages,
+  MapPin,
+  ChevronLeft
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -97,7 +101,30 @@ const ManagerDashboard: React.FC = () => {
     return { renewing, notRenewing, renewalRate, totalStudents };
   }, [data.students]);
 
-  // 3. Financial Stats
+  // 3. Geographical & Language Stats
+  const topInsights = useMemo(() => {
+    const countries: Record<string, number> = {};
+    const languages: Record<string, number> = {};
+
+    data.students.forEach(s => {
+      if (s.country) countries[s.country] = (countries[s.country] || 0) + 1;
+      if (s.enrolled_language) languages[s.enrolled_language] = (languages[s.enrolled_language] || 0) + 1;
+    });
+
+    const topCountries = Object.entries(countries)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([name, count]) => ({ name, count }));
+
+    const topLanguages = Object.entries(languages)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([name, count]) => ({ name, count }));
+
+    return { topCountries, topLanguages };
+  }, [data.students]);
+
+  // 4. Financial Stats
   const totalRevenue = useMemo(() => {
     return data.expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
   }, [data.expenses]);
@@ -135,7 +162,6 @@ const ManagerDashboard: React.FC = () => {
       
       {/* Hero Header */}
       <div className="relative bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-10 lg:p-14 rounded-[3.5rem] text-white shadow-2xl overflow-hidden group">
-        {/* Animated Background Elements */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] animate-pulse"></div>
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[100px] animate-float-slow"></div>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
@@ -172,7 +198,6 @@ const ManagerDashboard: React.FC = () => {
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {/* Teacher Stats */}
         <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-[3rem] -mr-4 -mt-4 transition-all group-hover:scale-150 group-hover:bg-emerald-100"></div>
             <div className="relative z-10">
@@ -184,7 +209,6 @@ const ManagerDashboard: React.FC = () => {
             </div>
         </div>
 
-        {/* Supervisor Stats */}
         <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-[3rem] -mr-4 -mt-4 transition-all group-hover:scale-150 group-hover:bg-blue-100"></div>
             <div className="relative z-10">
@@ -196,7 +220,6 @@ const ManagerDashboard: React.FC = () => {
             </div>
         </div>
 
-        {/* Sales Stats */}
         <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-bl-[3rem] -mr-4 -mt-4 transition-all group-hover:scale-150 group-hover:bg-purple-100"></div>
             <div className="relative z-10">
@@ -208,7 +231,6 @@ const ManagerDashboard: React.FC = () => {
             </div>
         </div>
 
-        {/* Renewal Rate - Special Card */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[3rem] text-white shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all relative overflow-hidden group">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
             <div className="relative z-10 flex flex-col h-full justify-between">
@@ -221,14 +243,87 @@ const ManagerDashboard: React.FC = () => {
                <div>
                   <h4 className="text-4xl font-black text-white mb-1">{studentStats.renewalRate}%</h4>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">نسبة التجديد العامة</p>
-                  
-                  {/* Mini Progress Bar */}
                   <div className="w-full h-1.5 bg-white/10 rounded-full mt-4 overflow-hidden">
                      <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" style={{ width: `${studentStats.renewalRate}%` }}></div>
                   </div>
                </div>
             </div>
         </div>
+      </div>
+
+      {/* New Insights: Countries & Languages */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+         {/* Top Countries Card */}
+         <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-8">
+               <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
+                     <Globe size={24} />
+                  </div>
+                  <div>
+                     <h3 className="text-xl font-black text-slate-800">أكثر الدول اشتراكاً</h3>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">التوزيع الجغرافي للطلاب</p>
+                  </div>
+               </div>
+            </div>
+            
+            <div className="space-y-4">
+               {topInsights.topCountries.length > 0 ? topInsights.topCountries.map((country, idx) => (
+                  <div key={country.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-blue-50/30 transition-colors">
+                     <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-blue-600 shadow-sm">
+                           {idx + 1}
+                        </div>
+                        <span className="text-sm font-black text-slate-700">{country.name}</span>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <span className="text-sm font-black text-slate-800">{country.count}</span>
+                        <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                           <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(country.count / studentStats.totalStudents) * 100}%` }}></div>
+                        </div>
+                     </div>
+                  </div>
+               )) : (
+                  <div className="text-center py-10 text-slate-300 font-bold">لا توجد بيانات دول متاحة حالياً.</div>
+               )}
+            </div>
+         </div>
+
+         {/* Top Languages Card */}
+         <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-8">
+               <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:scale-110 transition-transform">
+                     <Languages size={24} />
+                  </div>
+                  <div>
+                     <h3 className="text-xl font-black text-slate-800">أكثر اللغات اشتراكاً</h3>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">تحليل المسارات التعليمية</p>
+                  </div>
+               </div>
+            </div>
+            
+            <div className="space-y-4">
+               {topInsights.topLanguages.length > 0 ? topInsights.topLanguages.map((lang, idx) => (
+                  <div key={lang.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-emerald-50/30 transition-colors">
+                     <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-emerald-600 shadow-sm">
+                           {idx + 1}
+                        </div>
+                        <span className="text-sm font-black text-slate-700">{lang.name}</span>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <span className="text-sm font-black text-slate-800">{lang.count}</span>
+                        <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(lang.count / studentStats.totalStudents) * 100}%` }}></div>
+                        </div>
+                     </div>
+                  </div>
+               )) : (
+                  <div className="text-center py-10 text-slate-300 font-bold">لا توجد بيانات لغات متاحة حالياً.</div>
+               )}
+            </div>
+         </div>
       </div>
 
       {/* Main Charts Section */}
@@ -303,7 +398,6 @@ const ManagerDashboard: React.FC = () => {
                     <Tooltip formatter={(val) => `${Number(val).toLocaleString()} ج.م`} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'}} />
                  </PieChart>
               </ResponsiveContainer>
-              {/* Center Text */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
                  <span className="text-[10px] font-black text-slate-400 uppercase">الإجمالي</span>
                  <p className="text-lg font-black text-slate-800">{totalRevenue.toLocaleString()}</p>
