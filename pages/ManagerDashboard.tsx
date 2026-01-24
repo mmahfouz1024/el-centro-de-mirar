@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   TrendingUp, 
@@ -24,7 +23,8 @@ import {
   Globe,
   Languages,
   MapPin,
-  ChevronLeft
+  ChevronLeft,
+  UserX
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -97,8 +97,9 @@ const ManagerDashboard: React.FC = () => {
     const totalStudents = data.students.length;
     const renewing = data.students.filter(s => s.renewal_status === 'yes').length;
     const notRenewing = data.students.filter(s => s.renewal_status === 'no').length;
+    const undecided = data.students.filter(s => s.renewal_status === 'undecided' || !s.renewal_status).length;
     const renewalRate = totalStudents > 0 ? Math.round((renewing / totalStudents) * 100) : 0;
-    return { renewing, notRenewing, renewalRate, totalStudents };
+    return { renewing, notRenewing, undecided, renewalRate, totalStudents };
   }, [data.students]);
 
   // 3. Geographical & Language Stats
@@ -181,11 +182,27 @@ const ManagerDashboard: React.FC = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-4">
-             <div className="bg-white/5 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 text-center min-w-[140px] group-hover:bg-white/10 transition-colors">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">الطلاب النشطين</p>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+             {/* Total Students Block */}
+             <div className="bg-white/5 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 text-center min-w-[160px] group-hover:bg-white/10 transition-colors">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">إجمالي الطلاب</p>
                 <h3 className="text-4xl font-black text-white">{studentStats.totalStudents}</h3>
+                <div className="flex items-center justify-center gap-1 mt-2 text-[9px] font-bold text-emerald-400 uppercase">
+                  <Activity size={10} />
+                  <span>جميع المسجلين</span>
+                </div>
              </div>
+
+             {/* Stopped Students Block */}
+             <div className="bg-rose-500/10 backdrop-blur-xl p-6 rounded-[2.5rem] border border-rose-500/20 text-center min-w-[160px] group-hover:bg-rose-500/20 transition-colors">
+                <p className="text-[10px] font-black text-rose-300 uppercase tracking-widest mb-1">طلاب متوقفين</p>
+                <h3 className="text-4xl font-black text-rose-400">{studentStats.notRenewing}</h3>
+                <div className="flex items-center justify-center gap-1 mt-2 text-[9px] font-bold text-rose-300 uppercase">
+                  <UserX size={10} />
+                  <span>بدون تجديد</span>
+                </div>
+             </div>
+
              <button 
                onClick={fetchAllData} 
                className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 hover:scale-110 hover:rotate-180 transition-all duration-500"
@@ -349,6 +366,7 @@ const ManagerDashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                  <AreaChart data={chartData}>
                     <defs>
+                       {/* Fixed duplicate x1 attribute here */}
                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
                           <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
