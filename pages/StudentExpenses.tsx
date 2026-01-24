@@ -9,17 +9,9 @@ import {
   Trash2, 
   X, 
   CheckCircle2, 
-  XCircle, 
-  UserPlus,
-  Users2,
-  User,
-  BadgeCheck,
-  BookOpen,
-  DollarSign,
-  Headphones,
-  ShieldCheck,
-  Calculator,
-  CalendarDays,
+  User, 
+  Headphones, 
+  ShieldCheck, 
   Coins
 } from 'lucide-react';
 import { db } from '../services/supabase';
@@ -28,6 +20,8 @@ interface StudentExpensesProps {
   onUpdate?: () => void;
   selectedBranch: string;
 }
+
+const LANGUAGE_OPTIONS = ['اسبانى', 'انجليزى', 'المانى', 'فرنساوى', 'ايطالى'];
 
 const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBranch }) => {
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -39,26 +33,25 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Form State Updated with Partial Payment Fields
+  // Form State Updated
   const [formData, setFormData] = useState({
     student_name: '',
     subscription_type: 'new', 
-    course_type: 'memorization', 
+    course_type: 'اسبانى', 
     assigned_member: '', 
-    amount: '', // المبلغ الإجمالي
-    payment_type: 'full', // full | partial
+    amount: '', 
+    payment_type: 'full', 
     amount_paid: '',
     amount_remaining: 0,
     installments_count: '1',
     installment_amount: 0,
-    teacher_ratio: '', // إجمالي مستحق المعلم
+    teacher_ratio: '', 
     teacher_amount_paid: '',
     teacher_amount_remaining: 0,
     teacher_installments_count: '1',
     teacher_installment_amount: '',
     notes: '',
-    payment_method: 'نقدي (كاش)',
-    branch: 'الرئيسي'
+    payment_method: 'نقدي (كاش)'
   });
 
   useEffect(() => {
@@ -67,7 +60,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
 
   // الحسابات الآلية للمبالغ المتبقية والأقساط
   useEffect(() => {
-    if (formData.course_type === 'ijaza' && formData.payment_type === 'partial') {
+    if (formData.payment_type === 'partial') {
       const total = parseFloat(formData.amount) || 0;
       const paid = parseFloat(formData.amount_paid) || 0;
       const remaining = total - paid;
@@ -84,7 +77,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
         teacher_amount_remaining: tRemaining > 0 ? tRemaining : 0
       }));
     }
-  }, [formData.amount, formData.amount_paid, formData.installments_count, formData.teacher_ratio, formData.teacher_amount_paid, formData.course_type, formData.payment_type]);
+  }, [formData.amount, formData.amount_paid, formData.installments_count, formData.teacher_ratio, formData.teacher_amount_paid, formData.payment_type]);
 
   const fetchData = async () => {
     try {
@@ -121,13 +114,12 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
         category: 'رسوم دراسية',
         notes: formData.notes,
         payment_method: formData.payment_method,
-        branch: formData.branch,
+        branch: 'الرئيسي', // Default branch as it was removed from UI
         date: new Date().toISOString(),
         subscription_type: formData.subscription_type === 'new' ? 'طالب جديد' : 'طالب قديم',
-        course_type: formData.course_type === 'memorization' ? 'تحفيظ' : 'إجازة',
-        assigned_member: formData.course_type === 'ijaza' ? 'قسم الإجازة' : formData.assigned_member,
+        course_type: formData.course_type,
+        assigned_member: formData.assigned_member,
         teacher_ratio: parseFloat(formData.teacher_ratio) || 0,
-        // الحقول الجديدة
         payment_type: formData.payment_type,
         amount_paid: parseFloat(formData.amount_paid) || 0,
         amount_remaining: formData.amount_remaining,
@@ -156,7 +148,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
     setFormData({
       student_name: '',
       subscription_type: 'new',
-      course_type: 'memorization',
+      course_type: 'اسبانى',
       assigned_member: '',
       amount: '',
       payment_type: 'full',
@@ -170,8 +162,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
       teacher_installments_count: '1',
       teacher_installment_amount: '',
       notes: '',
-      payment_method: 'نقدي (كاش)',
-      branch: 'الرئيسي'
+      payment_method: 'نقدي (كاش)'
     });
   };
 
@@ -271,10 +262,8 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
-                     <span className={`px-3 py-1 rounded-lg text-[9px] font-black ${
-                       item.course_type === 'إجازة' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
-                     }`}>
-                        {item.course_type || 'تحفيظ'}
+                     <span className="px-3 py-1 rounded-lg text-[9px] font-black bg-blue-50 text-blue-600">
+                        {item.course_type}
                      </span>
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -320,8 +309,8 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
 
              <form onSubmit={handleSubmit} className="space-y-8">
                 
-                {/* 1. اسم الطالب والموقع */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. اسم الطالب */}
+                <div className="grid grid-cols-1 gap-4">
                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">اسم الطالب</label>
                       <input 
@@ -332,21 +321,10 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                        onChange={(e) => setFormData({...formData, student_name: e.target.value})}
                       />
                    </div>
-                   <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">فرع التحصيل</label>
-                      <select 
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none cursor-pointer"
-                        value={formData.branch}
-                        onChange={(e) => setFormData({...formData, branch: e.target.value})}
-                      >
-                         <option value="الرئيسي">الفرع الرئيسي</option>
-                         <option value="أونلاين">أونلاين</option>
-                      </select>
-                   </div>
                 </div>
 
                 {/* 2. نوع الاشتراك والمسار */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">نوع الاشتراك</label>
                       <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100">
@@ -356,78 +334,79 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                    </div>
 
                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المسار التعليمي</label>
-                      <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100">
-                         <button type="button" onClick={() => setFormData({...formData, course_type: 'memorization'})} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black transition-all ${formData.course_type === 'memorization' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>تحفيظ</button>
-                         <button type="button" onClick={() => setFormData({...formData, course_type: 'ijaza', assigned_member: ''})} className={`flex-1 py-2.5 rounded-xl text-[10px] font-black transition-all ${formData.course_type === 'ijaza' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400'}`}>إجازة</button>
-                      </div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المسار التعليمي (اللغة)</label>
+                      <select 
+                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none cursor-pointer"
+                         value={formData.course_type}
+                         onChange={(e) => setFormData({...formData, course_type: e.target.value})}
+                      >
+                         {LANGUAGE_OPTIONS.map(lang => (
+                            <option key={lang} value={lang}>{lang}</option>
+                         ))}
+                      </select>
                    </div>
                 </div>
 
-                {/* 3. المسؤول أو نوع الدفع (شرطي) */}
-                {formData.course_type !== 'ijaza' ? (
-                   <div className="space-y-1.5 animate-in slide-in-from-top-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
-                         {formData.subscription_type === 'new' ? <Headphones size={12} className="ml-1 text-purple-500" /> : <ShieldCheck size={12} className="ml-1 text-indigo-500" />}
-                         {formData.subscription_type === 'new' ? 'مسؤول المبيعات' : 'المشرف المسؤول'}
-                      </label>
-                      <select 
-                       className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none cursor-pointer"
-                       value={formData.assigned_member}
-                       onChange={(e) => setFormData({...formData, assigned_member: e.target.value})}
-                      >
-                        <option value="">-- اختر المسؤول --</option>
-                        {formData.subscription_type === 'new' ? salesTeam.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>) : supervisors.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>)}
-                      </select>
-                   </div>
-                ) : (
-                  <div className="space-y-6 animate-in fade-in duration-500">
-                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                      <div className="flex items-center justify-between mb-4">
-                        <label className="text-xs font-black text-amber-800 flex items-center">
-                          <Coins size={14} className="ml-2" /> طريقة دفع اشتراك الإجازة
-                        </label>
-                        <div className="flex bg-white/50 p-1 rounded-xl border border-amber-200">
-                          <button type="button" onClick={() => setFormData({...formData, payment_type: 'full', amount_paid: formData.amount, installments_count: '1'})} className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.payment_type === 'full' ? 'bg-amber-600 text-white' : 'text-amber-400'}`}>دفع كلي</button>
-                          <button type="button" onClick={() => setFormData({...formData, payment_type: 'partial'})} className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.payment_type === 'partial' ? 'bg-amber-600 text-white' : 'text-amber-400'}`}>دفع جزئي</button>
-                        </div>
-                      </div>
+                {/* 3. المسؤول */}
+                <div className="space-y-1.5 animate-in slide-in-from-top-2">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
+                      {formData.subscription_type === 'new' ? <Headphones size={12} className="ml-1 text-purple-500" /> : <ShieldCheck size={12} className="ml-1 text-indigo-500" />}
+                      {formData.subscription_type === 'new' ? 'مسؤول المبيعات' : 'المشرف المسؤول'}
+                   </label>
+                   <select 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none cursor-pointer"
+                    value={formData.assigned_member}
+                    onChange={(e) => setFormData({...formData, assigned_member: e.target.value})}
+                   >
+                     <option value="">-- اختر المسؤول --</option>
+                     {formData.subscription_type === 'new' ? salesTeam.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>) : supervisors.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>)}
+                   </select>
+                </div>
 
-                      {formData.payment_type === 'partial' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-2">
-                           <div className="space-y-1.5">
-                              <label className="text-[9px] font-black text-amber-700 uppercase">المبلغ الإجمالي</label>
-                              <input type="number" className="w-full bg-white border border-amber-200 rounded-xl p-3 text-sm font-black text-amber-900 outline-none" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} placeholder="0" />
-                           </div>
-                           <div className="space-y-1.5">
-                              <label className="text-[9px] font-black text-emerald-700 uppercase">المبلغ المدفوع الآن</label>
-                              <input type="number" className="w-full bg-white border border-emerald-200 rounded-xl p-3 text-sm font-black text-emerald-700 outline-none" value={formData.amount_paid} onChange={e => setFormData({...formData, amount_paid: e.target.value})} placeholder="0" />
-                           </div>
-                           <div className="space-y-1.5">
-                              <label className="text-[9px] font-black text-amber-700 uppercase">عدد الدفعات المتبقية</label>
-                              <select className="w-full bg-white border border-amber-200 rounded-xl p-3 text-sm font-black text-amber-900 outline-none cursor-pointer" value={formData.installments_count} onChange={e => setFormData({...formData, installments_count: e.target.value})}>
-                                {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} دفعات</option>)}
-                              </select>
-                           </div>
-                           <div className="bg-white/40 p-3 rounded-xl border border-amber-200 flex flex-col justify-center">
-                              <span className="text-[8px] font-black text-amber-600 uppercase block">قيمة القسط الواحد (آلي)</span>
-                              <span className="text-sm font-black text-amber-900">{formData.installment_amount} ج.م</span>
-                           </div>
-                        </div>
-                      )}
+                {/* 4. تفاصيل الدفع */}
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-xs font-black text-slate-800 flex items-center">
+                      <Coins size={14} className="ml-2" /> طريقة دفع الاشتراك
+                    </label>
+                    <div className="flex bg-white/50 p-1 rounded-xl border border-slate-200">
+                      <button type="button" onClick={() => setFormData({...formData, payment_type: 'full', amount_paid: formData.amount, installments_count: '1'})} className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.payment_type === 'full' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>دفع كلي</button>
+                      <button type="button" onClick={() => setFormData({...formData, payment_type: 'partial'})} className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${formData.payment_type === 'partial' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>دفع جزئي</button>
                     </div>
                   </div>
-                )}
 
-                {/* 4. حساب المعلم التفصيلي */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-2">
+                     <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-slate-700 uppercase">المبلغ الإجمالي</label>
+                        <input type="number" className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black text-slate-900 outline-none" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} placeholder="0" />
+                     </div>
+                     <div className="space-y-1.5">
+                        <label className="text-[9px] font-black text-emerald-700 uppercase">المبلغ المدفوع الآن</label>
+                        <input type="number" className="w-full bg-white border border-emerald-200 rounded-xl p-3 text-sm font-black text-emerald-700 outline-none" value={formData.amount_paid} onChange={e => setFormData({...formData, amount_paid: e.target.value})} placeholder="0" />
+                     </div>
+                     {formData.payment_type === 'partial' && (
+                       <>
+                         <div className="space-y-1.5">
+                            <label className="text-[9px] font-black text-slate-700 uppercase">عدد الدفعات المتبقية</label>
+                            <select className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black text-slate-900 outline-none cursor-pointer" value={formData.installments_count} onChange={e => setFormData({...formData, installments_count: e.target.value})}>
+                              {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} دفعات</option>)}
+                            </select>
+                         </div>
+                         <div className="bg-white/40 p-3 rounded-xl border border-slate-200 flex flex-col justify-center">
+                            <span className="text-[8px] font-black text-blue-600 uppercase block">قيمة القسط الواحد (آلي)</span>
+                            <span className="text-sm font-black text-slate-900">{formData.installment_amount} ج.م</span>
+                         </div>
+                       </>
+                     )}
+                  </div>
+                </div>
+
+                {/* 5. حساب المعلم التفصيلي */}
                 <div className="p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-6">
                    <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                       <h4 className="text-sm font-black text-slate-800 flex items-center">
                          <User size={16} className="ml-2 text-rose-500" /> تفاصيل استحقاق المعلم
                       </h4>
-                      {formData.course_type === 'ijaza' && formData.payment_type === 'partial' && (
-                        <span className="text-[9px] font-black text-rose-600 bg-rose-50 px-2 py-1 rounded-lg border border-rose-100">رصد أقساط المعلم</span>
-                      )}
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -441,7 +420,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                          />
                       </div>
 
-                      {formData.course_type === 'ijaza' && formData.payment_type === 'partial' ? (
+                      {formData.payment_type === 'partial' && (
                         <>
                            <div className="space-y-1.5">
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">المدفوع للمعلم حالياً</label>
@@ -469,7 +448,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                               />
                            </div>
                         </>
-                      ) : null}
+                      )}
                    </div>
                    
                    {formData.payment_type === 'partial' && (
@@ -482,7 +461,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
 
                 <button 
                   type="submit" disabled={actionLoading}
-                  className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black shadow-2xl flex items-center justify-center transition-all hover:bg-black active:scale-95 disabled:opacity-50 text-lg"
+                  className="w-full bg-slate-900 text-white py-6 rounded-[2.5rem] font-black shadow-2xl flex items-center justify-center transition-all hover:bg-black active:scale-95 disabled:opacity-50 text-lg"
                 >
                   {actionLoading ? <Loader2 className="animate-spin ml-3" size={24} /> : <CheckCircle2 className="ml-3" size={24} />}
                   اعتماد قيد التحصيل المالي
