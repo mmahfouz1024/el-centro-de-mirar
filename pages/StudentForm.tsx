@@ -11,7 +11,8 @@ import {
   Coins,
   Calendar,
   CalendarDays,
-  Globe
+  Globe,
+  Layers
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { db } from '../services/supabase';
@@ -20,10 +21,10 @@ import { StudentLevel, Gender, EduSystem } from '../types';
 const COUNTRY_DATA: Record<string, string> = {
   'السعودية': '+966',
   'مصر': '+20',
+  'الإمارات': '+971',
   'تركيا': '+90',
   'عمان': '+968',
   'قطر': '+974',
-  'الامارات': '+971',
   'البحرين': '+973',
   'الكويت': '+965',
   'أمريكا': '+1',
@@ -32,7 +33,7 @@ const COUNTRY_DATA: Record<string, string> = {
 };
 
 const COUNTRIES = Object.keys(COUNTRY_DATA);
-const CURRENCIES = ['ريال سعودي', 'ريال عماني', 'ريال قطري', 'دينار أردني', 'دينار كويتي', 'دولار امريكي', 'جنيه مصري', 'ليرة تركية', 'يورو'];
+const CURRENCIES = ['درهم إماراتي', 'ريال سعودي', 'ريال عماني', 'ريال قطري', 'دينار أردني', 'دينار كويتي', 'دولار امريكي', 'جنيه مصري', 'ليرة تركية', 'يورو'];
 const LANGUAGE_OPTIONS = ['اسبانى', 'انجليزى', 'المانى', 'فرنساوى', 'ايطالى'];
 
 const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
@@ -57,7 +58,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
     student_phone: '',
     parent_phone: '',
     parent_country_code: '+20',
-    level: StudentLevel.BEGINNER,
+    level: 'مبتدئ',
     current_juz: 30,
     last_hifz_date: '',
     total_memorized: 0,
@@ -67,7 +68,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
     teacher_name: '',
     supervisor_name: '',
     paid_amount: '',
-    currency: 'جنيه مصري',
+    currency: 'درهم إماراتي', // القيمة الافتراضية الجديدة
     renewal_status: 'undecided',
     recitation_level: 'متوسط',
     memorization_status: '',
@@ -97,7 +98,8 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
         join_date: editingStudent.join_date ? editingStudent.join_date.split('T')[0] : new Date().toISOString().split('T')[0],
         required_sessions_count: editingStudent.required_sessions_count || 1,
         preferred_schedule: editingStudent.preferred_schedule || {},
-        renewal_status: editingStudent.renewal_status || 'undecided'
+        renewal_status: editingStudent.renewal_status || 'undecided',
+        level: editingStudent.level || 'مبتدئ'
       });
     }
   }, [editingStudent]);
@@ -119,7 +121,6 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
     try {
       const studentNum = editingStudent?.student_number || Math.floor(10000 + Math.random() * 90000).toString();
       
-      // بناء Payload نظيف يحتوي فقط على الحقول الموجودة في قاعدة البيانات
       const payload = {
         name: formData.name,
         age: Number(formData.age) || 0,
@@ -219,6 +220,20 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المستوى (إدخال يدوي)</label>
+                <div className="relative">
+                  <Layers className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <input 
+                    type="text" 
+                    required 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10" 
+                    value={formData.level} 
+                    onChange={e => setFormData({...formData, level: e.target.value})} 
+                    placeholder="مثال: A1، تمهيدي، متقدم..." 
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">النوع</label>
                 <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                   {[Gender.MALE, Gender.FEMALE].map(g => (
@@ -298,7 +313,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
                   <Coins size={12} className="ml-1 text-amber-500" /> العملة
                 </label>
                 <select 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-amber-500/10 cursor-pointer appearance-none"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer appearance-none"
                   value={formData.currency}
                   onChange={e => setFormData({...formData, currency: e.target.value})}
                 >
