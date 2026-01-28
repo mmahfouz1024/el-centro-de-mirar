@@ -15,7 +15,8 @@ import {
   Smartphone,
   Calendar,
   Layers,
-  MapPin
+  MapPin,
+  MoreHorizontal
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/supabase';
@@ -35,7 +36,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
   const [filterSupervisor, setFilterSupervisor] = useState('الكل');
 
   const isTeacher = user?.role === 'teacher';
-  const isManager = user?.role === 'manager';
 
   useEffect(() => {
     fetchStudents();
@@ -95,10 +95,10 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
   }, [students, searchTerm, filterTeacher, filterLanguage, filterCountry, filterSupervisor]);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 text-right">
+    <div className="space-y-8 animate-in fade-in duration-700 text-right" dir="rtl">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center">
             <div className="p-3 bg-blue-700 text-white rounded-2xl ml-4 shadow-xl">
@@ -106,25 +106,23 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
             </div>
             شؤون الطلاب
           </h2>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-3 mr-16">إدارة الملفات الأكاديمية والبيانات الموحدة</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 mr-1">إدارة الملفات الأكاديمية والبيانات الموحدة</p>
         </div>
         
-        <div className="flex gap-4">
-          <button onClick={() => navigate('/students/form')} className="bg-gradient-to-r from-blue-700 to-indigo-600 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center shadow-xl hover:scale-105 transition-all active:scale-95">
-            <Plus size={18} className="ml-2" />
-            تسجيل طالب جديد
-          </button>
-        </div>
+        <button onClick={() => navigate('/students/form')} className="bg-gradient-to-r from-blue-700 to-indigo-600 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center shadow-xl hover:scale-105 transition-all active:scale-95">
+          <Plus size={18} className="ml-2" />
+          تسجيل طالب جديد
+        </button>
       </div>
 
       {/* Tools Section */}
-      <div className="bg-gradient-to-br from-white via-white to-slate-50 p-6 rounded-3xl border border-slate-200 custom-shadow space-y-6">
+      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6">
          <div className="relative">
             <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input 
               type="text" 
               placeholder="ابحث بالاسم أو الرقم التعريفي للطالب..." 
-              className="w-full bg-slate-50/50 border border-slate-100 rounded-2xl pr-12 pl-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white transition-all"
+              className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -157,93 +155,140 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                </select>
             </div>
 
-            {/* Supervisor Filter (Non-teachers only) */}
             {!isTeacher && (
-              <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                 <div className="p-2 bg-white rounded-xl shadow-sm text-purple-600"><ShieldCheck size={16} /></div>
-                 <select 
-                    className="bg-transparent text-slate-600 text-[11px] font-black outline-none cursor-pointer px-3 min-w-[140px]"
-                    value={filterSupervisor}
-                    onChange={(e) => setFilterSupervisor(e.target.value)}
-                 >
-                    <option value="الكل">جميع المشرفين</option>
-                    {supervisorsList.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>)}
-                 </select>
-              </div>
-            )}
+              <>
+                <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                   <div className="p-2 bg-white rounded-xl shadow-sm text-purple-600"><ShieldCheck size={16} /></div>
+                   <select 
+                      className="bg-transparent text-slate-600 text-[11px] font-black outline-none cursor-pointer px-3 min-w-[140px]"
+                      value={filterSupervisor}
+                      onChange={(e) => setFilterSupervisor(e.target.value)}
+                   >
+                      <option value="الكل">جميع المشرفين</option>
+                      {supervisorsList.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>)}
+                   </select>
+                </div>
 
-            {/* Teacher Filter (Non-teachers only) */}
-            {!isTeacher && (
-              <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                 <div className="p-2 bg-white rounded-xl shadow-sm text-amber-500"><User size={16} /></div>
-                 <select 
-                    className="bg-transparent text-slate-600 text-[11px] font-black outline-none cursor-pointer px-3 min-w-[140px]"
-                    value={filterTeacher}
-                    onChange={(e) => setFilterTeacher(e.target.value)}
-                 >
-                    <option value="الكل">جميع المحاضرين</option>
-                    {teachersList.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
-                 </select>
-              </div>
+                <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                   <div className="p-2 bg-white rounded-xl shadow-sm text-amber-500"><User size={16} /></div>
+                   <select 
+                      className="bg-transparent text-slate-600 text-[11px] font-black outline-none cursor-pointer px-3 min-w-[140px]"
+                      value={filterTeacher}
+                      onChange={(e) => setFilterTeacher(e.target.value)}
+                   >
+                      <option value="الكل">جميع المحاضرين</option>
+                      {teachersList.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
+                   </select>
+                </div>
+              </>
             )}
          </div>
       </div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 text-slate-400">
-          <Loader2 className="animate-spin mb-6" size={50} />
-          <span className="font-black tracking-[0.2em] text-xs uppercase">جاري استدعاء البيانات...</span>
-        </div>
-      ) : filteredStudents.length === 0 ? (
-        <div className="bg-white border-4 border-dashed border-slate-100 rounded-3xl py-40 text-center">
-          <Users size={100} className="mx-auto text-slate-100 mb-8" />
-          <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد سجلات</h3>
-          <p className="text-slate-400 font-bold text-sm">ابدأ بإضافة الطلاب أو قم بتغيير معايير البحث.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-           {filteredStudents.map(student => (
-              <div key={student.id} className="bg-gradient-to-br from-white to-blue-50/30 rounded-3xl border border-slate-100 overflow-hidden custom-shadow group hover:border-blue-200 transition-all hover:-translate-y-1">
-                 <div className="h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
-                 <div className="p-6">
-                    <div className="flex justify-between items-start mb-6">
-                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-lg ${student.gender === Gender.MALE ? 'bg-blue-600' : 'bg-rose-500'} group-hover:scale-105 transition-transform`}>
+      {/* Main Content Area */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-slate-400">
+            <Loader2 className="animate-spin mb-6" size={50} />
+            <span className="font-black tracking-[0.2em] text-xs uppercase">جاري استدعاء البيانات...</span>
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div className="py-40 text-center">
+            <Users size={80} className="mx-auto text-slate-100 mb-6" />
+            <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد سجلات مطابقة</h3>
+            <p className="text-slate-400 font-bold text-sm">ابدأ بإضافة الطلاب أو قم بتغيير معايير البحث.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="w-full text-right border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">الطالب / الكود</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">المسار والمستوى</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">البيانات</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الموقع</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الاتصال</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">المحاضر</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredStudents.map(student => (
+                  <tr key={student.id} className="group hover:bg-blue-50/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white shadow-sm ${student.gender === Gender.MALE ? 'bg-blue-600' : 'bg-rose-500'}`}>
                           {student.name.charAt(0)}
-                       </div>
-                       <div className="flex space-x-1 space-x-reverse">
-                          <button onClick={() => navigate('/students/form', { state: { data: student } })} className="p-2 text-slate-300 hover:text-blue-600 transition-all bg-slate-50/50 rounded-xl"><Edit2 size={14}/></button>
-                          {!isTeacher && (
-                            <button onClick={() => handleDelete(student.id)} className="p-2 text-slate-300 hover:text-rose-500 transition-all bg-slate-50/50 rounded-xl"><Trash2 size={14}/></button>
-                          )}
-                       </div>
-                    </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-800 leading-none mb-1">{student.name}</p>
+                          <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-tighter">ID: {student.student_number}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${student.enrolled_language ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {student.enrolled_language || 'عام'}
+                        </span>
+                        <span className="text-[9px] font-bold text-slate-500">{student.level}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                       <span className="text-[11px] font-bold text-slate-600">{student.age} سنة • {student.gender}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center text-[11px] font-bold text-slate-600">
+                        <MapPin size={12} className="ml-1 text-rose-500" />
+                        {student.country}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center text-[11px] font-bold text-slate-600 dir-ltr">
+                        <Smartphone size={12} className="mr-1 text-emerald-500" />
+                        {student.parent_phone}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                       <p className="text-[11px] font-black text-slate-700">{student.teacher_name || '---'}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-1 space-x-reverse">
+                        <button 
+                          onClick={() => navigate('/students/form', { state: { data: student } })} 
+                          className="p-2 text-slate-300 hover:text-blue-600 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-blue-100"
+                        >
+                          <Edit2 size={16}/>
+                        </button>
+                        {!isTeacher && (
+                          <button 
+                            onClick={() => handleDelete(student.id)} 
+                            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-rose-100"
+                          >
+                            <Trash2 size={16}/>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-                    <h4 className="text-base font-black text-slate-800 mb-1 line-clamp-1">{student.name}</h4>
-                    <div className="flex flex-wrap items-center gap-2 mb-6">
-                       <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest">كود: {student.student_number}</span>
-                       <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${student.enrolled_language ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
-                         {student.enrolled_language || 'عام'}
-                       </span>
-                    </div>
-
-                    <div className="space-y-2 mb-2">
-                       <div className="flex items-center text-[11px] font-bold text-slate-500 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
-                          <User size={12} className="ml-2 text-blue-500" />
-                          {student.age} سنة • {student.gender}
-                       </div>
-                       <div className="flex items-center text-[11px] font-bold text-slate-500 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
-                          <MapPin size={12} className="ml-2 text-rose-500" />
-                          {student.country}
-                       </div>
-                       <div className="flex items-center text-[11px] font-bold text-slate-500 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
-                          <Smartphone size={12} className="ml-2 text-emerald-500" />
-                          <span className="dir-ltr">{student.parent_phone}</span>
-                       </div>
-                    </div>
-                 </div>
+      {/* Footer Stats */}
+      {!loading && filteredStudents.length > 0 && (
+        <div className="flex items-center justify-between px-8 py-4 bg-slate-900 rounded-3xl text-white shadow-xl">
+           <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">إجمالي النتائج:</span>
+                 <span className="text-sm font-black">{filteredStudents.length} طالب</span>
               </div>
-           ))}
+           </div>
+           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">El Centro de Mirar • Database Live</p>
         </div>
       )}
     </div>
