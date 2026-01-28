@@ -45,7 +45,7 @@ const EvaluationsList: React.FC = () => {
     return evaluations.filter(e => {
       const matchSupervisor = filterSupervisor === 'الكل' || e.evaluator_name === filterSupervisor;
       const matchTeacher = filterTeacher === 'الكل' || e.teacher_name === filterTeacher;
-      const matchDate = !filterDate || e.created_at.includes(filterDate);
+      const matchDate = !filterDate || (e.created_at && e.created_at.includes(filterDate));
       return matchSupervisor && matchTeacher && matchDate;
     });
   }, [evaluations, filterSupervisor, filterTeacher, filterDate]);
@@ -155,10 +155,11 @@ const EvaluationsList: React.FC = () => {
                 <tbody className="divide-y divide-slate-50">
                     {filteredEvaluations.map(ev => {
                       const avg = (ev.internet_quality + ev.camera_usage + ev.focus_level + ev.management_skills) / 4;
+                      const dateDisplay = ev.created_at ? new Date(ev.created_at).toLocaleDateString('ar-EG') : '---';
                       return (
                         <tr key={ev.id} className="group hover:bg-purple-50/20 transition-all">
                           <td className="px-6 py-4">
-                             <div className="text-sm font-black text-slate-800">{new Date(ev.created_at).toLocaleDateString('ar-EG')}</div>
+                             <div className="text-sm font-black text-slate-800">{dateDisplay}</div>
                              <div className="text-[9px] font-bold text-purple-600 flex items-center mt-0.5">
                                 <ShieldCheck size={10} className="ml-1" /> {ev.evaluator_name}
                              </div>
