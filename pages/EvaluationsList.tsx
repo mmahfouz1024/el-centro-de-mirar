@@ -18,7 +18,8 @@ import {
   ShieldCheck,
   ChevronLeft,
   Activity,
-  Star
+  Star,
+  GraduationCap
 } from 'lucide-react';
 import { db, formatAppDate } from '../services/supabase';
 
@@ -61,7 +62,7 @@ const EvaluationsList: React.FC = () => {
           </div>
           <div>
             <h2 className="text-3xl font-black text-slate-800 tracking-tight">سجل التقييمات التاريخي</h2>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">أرشيف تقارير الجودة ومتابعة أداء الحلقات</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">أرشيف تقارير الجودة المربوطة باسم المحاضر والطالب</p>
           </div>
         </div>
         
@@ -142,7 +143,7 @@ const EvaluationsList: React.FC = () => {
                 <thead className="bg-slate-50 border-b border-slate-100">
                     <tr>
                         <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">التاريخ / المشرف</th>
-                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">المحاضر والحلقة</th>
+                        <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">المحاضر والطالب</th>
                         <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">جودة النت</th>
                         <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الكاميرا</th>
                         <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">التركيز</th>
@@ -164,8 +165,8 @@ const EvaluationsList: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                              <div className="text-sm font-black text-slate-800">{ev.teacher_name}</div>
-                             <div className="text-[9px] font-bold text-slate-400 flex items-center mt-0.5">
-                                <BookOpen size={10} className="ml-1" /> {ev.class_name}
+                             <div className="text-[9px] font-bold text-emerald-600 flex items-center mt-0.5">
+                                <GraduationCap size={10} className="ml-1" /> {ev.student_name || ev.class_name}
                              </div>
                           </td>
                           <td className="px-6 py-4 text-center">
