@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ClipboardCheck, 
@@ -22,9 +23,10 @@ import {
   Eye,
   ShieldAlert,
   X,
-  ChevronLeft
+  ChevronLeft,
+  AlertTriangle,
+  GraduationCap
 } from 'lucide-react';
-// Fixed: Added missing useNavigate import from react-router-dom
 import { useNavigate } from 'react-router-dom';
 import { db, formatAppDate } from '../services/supabase';
 
@@ -59,16 +61,15 @@ const RatingInput = ({ label, value, onChange, icon: Icon }: any) => (
 );
 
 const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
-  // Fixed: Initialized navigate using useNavigate hook
   const navigate = useNavigate();
   const [teachers, setTeachers] = useState<any[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [allEvaluations, setAllEvaluations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
   const [selectedTeacher, setSelectedTeacher] = useState('');
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
   const [ratings, setRatings] = useState({
@@ -80,9 +81,7 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
   
   const [notes, setNotes] = useState('');
 
-  // تعديل: المشرف والمدير والمشرف العام كلهم لديهم صلاحيات عالية لرؤية التحليلات
   const isHighLevel = user?.role === 'manager' || user?.role === 'general_supervisor' || user?.role === 'supervisor';
-  const isGeneralSupervisor = user?.role === 'general_supervisor';
 
   useEffect(() => {
     fetchData();
@@ -91,13 +90,13 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [teachersData, classesData, evalsData] = await Promise.all([
+      const [teachersData, studentsData, evalsData] = await Promise.all([
         db.profiles.getTeachers(),
-        db.classes.getAll(),
+        db.students.getAll(),
         db.classEvaluations.getAll()
       ]);
       setTeachers(teachersData || []);
-      setClasses(classesData || []);
+      setStudents(studentsData || []);
       setAllEvaluations(evalsData || []);
     } catch (error) {
       console.error(error);
@@ -106,32 +105,40 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
     }
   };
 
-  const filteredClasses = useMemo(() => {
+  const filteredStudentsForTeacher = useMemo(() => {
     if (!selectedTeacher) return [];
-    return classes.filter(c => c.teacher === selectedTeacher);
-  }, [classes, selectedTeacher]);
+    return students.filter(s => s.teacher_name === selectedTeacher);
+  }, [students, selectedTeacher]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTeacher || !selectedClass) {
-      alert('يرجى اختيار المحاضر والحلقة');
+    if (!selectedTeacher || !selectedStudent) {
+      alert('يرجى اختيار المحاضر والطالب أولاً');
       return;
     }
+
+    const avgScore = (ratings.internet_quality + ratings.camera_usage + ratings.focus_level + ratings.management_skills) / 4;
 
     setSubmitting(true);
     try {
       await db.classEvaluations.create({
         teacher_name: selectedTeacher,
-        class_name: selectedClass,
+        student_name: selectedStudent, // تم التغيير من class_name إلى student_name
         evaluator_name: user?.full_name || 'مشرف',
         ...ratings,
         notes,
         created_at: new Date().toISOString()
       });
       
-      alert('تم حفظ التقييم بنجاح');
+      // نظام التنبيه الفوري للجودة المنخفضة
+      if (avgScore < 5) {
+        alert('⚠️ تنبيه: تم تسجيل تقييم منخفض (أقل من 5/10). سيتم إخطار الإدارة فوراً لمراجعة أداء المحاضر في هذه الحصة.');
+      } else {
+        alert('تم حفظ التقييم بنجاح');
+      }
+
       setNotes('');
-      setSelectedClass('');
+      setSelectedStudent('');
       setSelectedTeacher('');
       fetchData();
     } catch (error) {
@@ -143,7 +150,6 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
 
   const teacherAnalysis = useMemo(() => {
     if (!isHighLevel) return [];
-
     const stats: Record<string, any> = {};
     
     allEvaluations.forEach(ev => {
@@ -152,24 +158,20 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
           name: ev.teacher_name,
           evaluationsCount: 0,
           totalScore: 0,
-          supervisors: new Set(),
-          lastEval: ev.created_at,
-          evals: []
+          lowQualityAlerts: 0
         };
       }
       
-      const avgScore = (ev.internet_quality + ev.camera_usage + ev.focus_level + ev.management_skills) / 4;
-      stats[ev.teacher_name].totalScore += avgScore;
+      const avg = (ev.internet_quality + ev.camera_usage + ev.focus_level + ev.management_skills) / 4;
+      stats[ev.teacher_name].totalScore += avg;
       stats[ev.teacher_name].evaluationsCount += 1;
-      stats[ev.teacher_name].supervisors.add(ev.evaluator_name);
-      stats[ev.teacher_name].evals.push(ev);
+      if (avg < 5) stats[ev.teacher_name].lowQualityAlerts += 1;
     });
 
     return Object.values(stats)
       .map(s => ({
         ...s,
         qualityPercent: Math.round((s.totalScore / s.evaluationsCount) * 10),
-        supervisorsList: Array.from(s.supervisors)
       }))
       .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a, b) => b.qualityPercent - a.qualityPercent);
@@ -191,14 +193,14 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
             <ClipboardCheck size={32} />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tight">تقييم جودة الحصص</h2>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">رصد ومتابعة أداء الهيئة التعليمية يومياً</p>
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight">تقييم جودة الحصص (متابعة لحظية)</h2>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">تقييم أداء المحاضر مع الطالب قبل أو أثناء تسجيل الحصة</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {/* Form Section - Shown to all but General Supervisor usually wants to focus on analysis */}
+        {/* Form Section */}
         <div className="xl:col-span-7 space-y-6">
           <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 h-fit">
             <div className="flex items-center justify-between">
@@ -206,8 +208,9 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
                 <PlusCircle size={20} className="ml-2 text-blue-500" />
                 إدخال تقييم جديد
               </h3>
-              <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase">
-                {user?.full_name}
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">مراقبة مباشرة</span>
               </div>
             </div>
 
@@ -221,7 +224,7 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
                   <select 
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
                     value={selectedTeacher}
-                    onChange={(e) => { setSelectedTeacher(e.target.value); setSelectedClass(''); }}
+                    onChange={(e) => { setSelectedTeacher(e.target.value); setSelectedStudent(''); }}
                     required
                   >
                     <option value="">-- اختر المحاضر --</option>
@@ -231,18 +234,18 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
 
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
-                    <BookOpen size={14} className="ml-1 text-emerald-600" />
-                    الحلقة
+                    <GraduationCap size={14} className="ml-1 text-emerald-600" />
+                    الطالب (الحصة الحالية)
                   </label>
                   <select 
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50"
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
+                    value={selectedStudent}
+                    onChange={(e) => setSelectedStudent(e.target.value)}
                     disabled={!selectedTeacher}
                     required
                   >
-                    <option value="">-- اختر الحلقة --</option>
-                    {filteredClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    <option value="">-- اختر الطالب الجاري تقييمه --</option>
+                    {filteredStudentsForTeacher.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
               </div>
@@ -276,7 +279,7 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
           </div>
         </div>
 
-        {/* Analysis Sidebar - Now fully accessible to regular supervisors too */}
+        {/* Analysis Sidebar */}
         {isHighLevel && (
            <div className="xl:col-span-5 space-y-6">
               <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm h-full flex flex-col">
@@ -319,10 +322,16 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
                                    </div>
                                 </div>
                              </div>
-                             <div className="text-left">
+                             <div className="text-left flex flex-col items-end">
                                 <span className={`text-lg font-black ${item.qualityPercent >= 85 ? 'text-emerald-600' : 'text-amber-500'}`}>
                                    {item.qualityPercent}%
                                 </span>
+                                {item.lowQualityAlerts > 0 && (
+                                   <div className="flex items-center text-[8px] font-black text-rose-500 uppercase bg-rose-50 px-1.5 py-0.5 rounded mt-1">
+                                      <AlertTriangle size={8} className="ml-1" />
+                                      {item.lowQualityAlerts} إنذار جودة
+                                   </div>
+                                )}
                              </div>
                           </div>
                           <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
