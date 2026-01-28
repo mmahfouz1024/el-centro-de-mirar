@@ -1,25 +1,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  TrendingUp, 
   Trophy,
   Crown,
   Loader2,
   UserCheck,
-  Star,
   ShieldCheck,
   Users,
   Briefcase,
-  BookOpen,
-  AlertTriangle,
   GraduationCap,
-  Sparkles,
-  ChevronLeft,
-  ArrowUpRight,
   Activity,
-  UserPlus,
   UserMinus,
-  LayoutDashboard
+  AlertTriangle
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -43,9 +35,6 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
     loading: true
   });
 
-  // نعتبر المشرف العام والمشرف العادي كلاهما يريان الإحصائيات الكلية للمركز
-  const isAuthorizedToSeeAll = user?.role === 'general_supervisor' || user?.role === 'supervisor' || user?.role === 'manager';
-
   useEffect(() => {
     fetchStats();
   }, [user]);
@@ -62,10 +51,8 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
       let filteredStudents = studentsData || [];
       let filteredClasses = classesData || [];
       let filteredTeachers = profilesData?.filter((p: any) => p.role === 'teacher') || [];
-      const supervisorsList = profilesData?.filter((p: any) => p.role === 'supervisor') || [];
+      const supervisorsList = profilesData?.filter((p: any) => p.role === 'supervisor' || p.role === 'general_supervisor') || [];
 
-      // إذا لم يكن مديراً أو مشرفاً (أي إذا كان مدرساً يدخل لهذه اللوحة بالخطأ)، نقوم بتصفية طلابه فقط
-      // أما المشرف فيرى الكل ليطابق صفحة الطلاب (64 طالب)
       if (user?.role === 'teacher') {
          filteredStudents = filteredStudents.filter((s: any) => s.teacher_name === user.full_name);
          filteredClasses = filteredClasses.filter((c: any) => c.teacher === user.full_name);
@@ -80,6 +67,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
         loading: false
       });
     } catch (error) {
+      console.error("Dashboard Stats Error:", error);
       setStats(prev => ({ ...prev, loading: false }));
     }
   };
@@ -111,8 +99,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
   return (
     <div className="space-y-12 animate-in fade-in duration-1000 text-right" dir="rtl">
       
-      {/* Welcome Hero */}
-      <div className={`p-10 lg:p-14 rounded-3xl text-white shadow-2xl relative overflow-hidden bg-premium-dark`}>
+      <div className="p-10 lg:p-14 rounded-huge text-white shadow-2xl relative overflow-hidden bg-premium-dark">
          <div className="absolute top-0 right-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')]"></div>
          <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-amber-500/20 rounded-full blur-[120px] animate-pulse"></div>
          <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] animate-pulse delay-1000"></div>
@@ -178,7 +165,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-         <div className="lg:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
+         <div className="lg:col-span-2 bg-white p-10 rounded-huge border border-slate-100 shadow-sm relative overflow-hidden">
             <div className="flex items-center justify-between mb-10">
                <div>
                   <h3 className="text-xl font-black text-slate-800 flex items-center">
@@ -212,7 +199,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
          </div>
 
          <div className="space-y-6">
-            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden group h-1/2">
+            <div className="bg-slate-900 p-8 rounded-huge text-white relative overflow-hidden group h-1/2">
                <div className="relative z-10 h-full flex flex-col justify-between">
                   <div>
                     <div className="p-3 bg-white/10 rounded-2xl inline-block mb-4"><Trophy size={28} className="text-amber-400" /></div>
@@ -228,7 +215,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                <div className="absolute -bottom-40 -right-40 w-64 h-64 bg-blue-600/20 rounded-full blur-[80px]"></div>
             </div>
 
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm h-1/2">
+            <div className="bg-white p-8 rounded-huge border border-slate-100 shadow-sm h-1/2">
                <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center shadow-inner">
                      <AlertTriangle size={24} />

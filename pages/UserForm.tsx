@@ -119,7 +119,7 @@ const UserForm: React.FC = () => {
       newPermissions = { 
         ...DEFAULT_PERMISSIONS,
         page_students: true, page_teachers: true, page_classes: true, page_schedule: true,
-        page_attendance: true, page_class_eval: true, page_achievements: true
+        page_attendance: true, page_class_eval: true, page_eval_list: true, page_achievements: true
       };
     } else {
       newPermissions = { ...DEFAULT_PERMISSIONS, page_classes: true, page_schedule: true };

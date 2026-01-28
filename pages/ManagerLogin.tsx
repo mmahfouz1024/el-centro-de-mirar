@@ -132,7 +132,7 @@ const ManagerLogin: React.FC<ManagerLoginProps> = ({ onLogin }) => {
       </div>
       
       <p className="text-slate-600 font-black text-[9px] mt-12 uppercase tracking-[0.3em]">
-        Proprietary Access • Center Dawood GM Portal v2.5
+        Proprietary Access • EL CENTRO DE MIRAR GM Portal v2.5
       </p>
     </div>
   );

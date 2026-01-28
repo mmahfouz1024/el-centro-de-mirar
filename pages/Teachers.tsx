@@ -234,7 +234,7 @@ const Teachers: React.FC<{ user?: any }> = ({ user }) => {
            </div>
            <div className="flex items-center gap-4">
               <div className="h-10 w-px bg-white/10 hidden md:block"></div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] hidden sm:block">Center Dawood • HR Management</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] hidden sm:block">EL CENTRO DE MIRAR • HR Management</p>
            </div>
         </div>
       )}
