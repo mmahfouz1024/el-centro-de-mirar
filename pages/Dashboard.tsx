@@ -18,7 +18,8 @@ import {
   ArrowUpRight,
   Activity,
   UserPlus,
-  UserMinus
+  UserMinus,
+  LayoutDashboard
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -42,7 +43,8 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
     loading: true
   });
 
-  const isGenSup = user?.role === 'general_supervisor';
+  // نعتبر المشرف العام والمشرف العادي كلاهما يريان الإحصائيات الكلية للمركز
+  const isAuthorizedToSeeAll = user?.role === 'general_supervisor' || user?.role === 'supervisor' || user?.role === 'manager';
 
   useEffect(() => {
     fetchStats();
@@ -62,11 +64,12 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
       let filteredTeachers = profilesData?.filter((p: any) => p.role === 'teacher') || [];
       const supervisorsList = profilesData?.filter((p: any) => p.role === 'supervisor') || [];
 
-      if (!isGenSup && user?.role === 'supervisor') {
-         filteredStudents = filteredStudents.filter((s: any) => s.supervisor_name === user.full_name);
-         const teacherNames = [...new Set(filteredStudents.map((s: any) => s.teacher_name))];
-         filteredTeachers = filteredTeachers.filter((t: any) => teacherNames.includes(t.full_name));
-         filteredClasses = filteredClasses.filter((c: any) => teacherNames.includes(c.teacher));
+      // إذا لم يكن مديراً أو مشرفاً (أي إذا كان مدرساً يدخل لهذه اللوحة بالخطأ)، نقوم بتصفية طلابه فقط
+      // أما المشرف فيرى الكل ليطابق صفحة الطلاب (64 طالب)
+      if (user?.role === 'teacher') {
+         filteredStudents = filteredStudents.filter((s: any) => s.teacher_name === user.full_name);
+         filteredClasses = filteredClasses.filter((c: any) => c.teacher === user.full_name);
+         filteredTeachers = filteredTeachers.filter((t: any) => t.full_name === user.full_name);
       }
 
       setStats({
@@ -81,7 +84,6 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
     }
   };
 
-  // حساب إحصائيات الطلاب المطلوبة
   const studentMetrics = useMemo(() => {
     const total = stats.students.length;
     const renewed = stats.students.filter(s => s.renewal_status === 'yes').length;
@@ -102,7 +104,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
   if (stats.loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400">
       <Loader2 className="animate-spin mb-6" size={60} />
-      <p className="font-black text-sm uppercase tracking-[0.3em] text-slate-800">جاري تحليل البيانات...</p>
+      <p className="font-black text-sm uppercase tracking-[0.3em] text-slate-800">جاري تحليل بيانات النظام...</p>
     </div>
   );
 
@@ -118,72 +120,72 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
          <div className="relative z-10 flex flex-col xl:flex-row justify-between items-center gap-10">
             <div className="text-right space-y-6">
                <div className="inline-flex items-center px-6 py-2 bg-white/10 rounded-full border border-white/20 backdrop-blur-md">
-                  {isGenSup ? <Crown size={20} className="ml-3 text-amber-400" /> : <ShieldCheck size={20} className="ml-3 text-emerald-400" />}
-                  <span className="text-[12px] font-black uppercase tracking-[0.3em]">{isGenSup ? 'رئيس هيئة الإشراف' : 'لوحة الإشراف الذكية'}</span>
+                  {user?.role === 'general_supervisor' ? <Crown size={20} className="ml-3 text-amber-400" /> : <ShieldCheck size={20} className="ml-3 text-emerald-400" />}
+                  <span className="text-[12px] font-black uppercase tracking-[0.3em]">{user?.role === 'general_supervisor' ? 'رئيس هيئة الإشراف' : 'لوحة الإشراف المركزية'}</span>
                </div>
                <h2 className="text-4xl lg:text-6xl font-black leading-[1.1] tracking-tight">
-                  مرحباً بك في <br/>
-                  <span className="text-gradient-gold">El Centro de Mirar</span>
+                  مركز داود <br/>
+                  <span className="text-gradient-gold">للغات والعلوم</span>
                </h2>
                <p className="text-slate-300 text-lg font-medium max-w-2xl leading-relaxed">
-                  نظام إدارة شامل مدعوم بالذكاء الاصطناعي لضمان أعلى مستويات الجودة في تعليم اللغات والعلوم.
+                  نظرة شاملة على أداء المركز: إدارة الطاقم التعليمي ومتابعة {studentMetrics.total} طالب مسجل.
                </p>
                <div className="flex gap-4">
-                  <button onClick={() => navigate('/students')} className="bg-white text-slate-900 px-8 py-3.5 rounded-2xl font-black text-sm hover:bg-amber-500 hover:text-white transition-all shadow-xl">بدء المتابعة</button>
+                  <button onClick={() => navigate('/students')} className="bg-white text-slate-900 px-8 py-3.5 rounded-2xl font-black text-sm hover:bg-amber-500 hover:text-white transition-all shadow-xl">قاعدة بيانات الطلاب</button>
                </div>
             </div>
             
             <div className="grid grid-cols-2 gap-6 w-full xl:w-auto">
-               <div className="glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
+               <div onClick={() => navigate('/students')} className="cursor-pointer glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
                   <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
                      <Users size={28} className="text-white" />
                   </div>
                   <span className="block text-4xl font-black">{studentMetrics.total}</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mt-2 block">طالب نشط</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mt-2 block">إجمالي الطلاب</span>
                </div>
-               <div className="glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
+               <div onClick={() => navigate('/teachers')} className="cursor-pointer glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
                   <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-                     <BookOpen size={28} className="text-white" />
+                     <GraduationCap size={28} className="text-white" />
                   </div>
-                  <span className="block text-4xl font-black">{stats.classes.length}</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mt-2 block">حلقة دراسية</span>
+                  <span className="block text-4xl font-black">{stats.teachers.length}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mt-2 block">سجل المحاضرين</span>
                </div>
             </div>
          </div>
       </div>
 
-      {/* KPI Stats Grid - تم تحديث العناصر المطلوبة */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
          {[
-            { label: 'سجل المحاضرين', icon: GraduationCap, val: stats.teachers.length, path: '/teachers', color: 'blue' },
-            { label: 'إجمالي الطلاب', icon: Users, val: studentMetrics.total, path: '/students', color: 'indigo' },
-            { label: 'الطلاب المجددون', icon: UserCheck, val: studentMetrics.renewed, path: '/renewal-followup', color: 'emerald' },
-            { label: 'الطلاب المتوقفون', icon: UserMinus, val: studentMetrics.stopped, path: '/renewal-followup', color: 'rose' },
+            { label: 'سجل المحاضرين', icon: Briefcase, val: stats.teachers.length, path: '/teachers', color: 'blue', desc: 'إدارة الطاقم التعليمي' },
+            { label: 'إجمالي الطلاب', icon: Users, val: studentMetrics.total, path: '/students', color: 'indigo', desc: 'كافة المسجلين بالنظام' },
+            { label: 'طلاب مؤكد تجديدهم', icon: UserCheck, val: studentMetrics.renewed, path: '/renewal-followup', color: 'emerald', desc: 'اشتراكات سارية' },
+            { label: 'طلاب متوقفون', icon: UserMinus, val: studentMetrics.stopped, path: '/renewal-followup', color: 'rose', desc: 'بحاجة لمتابعة فورية' },
          ].map((item, idx) => (
             <div 
                key={idx} 
                onClick={() => navigate(item.path)}
-               className="bg-gradient-to-br from-white to-slate-50 p-8 rounded-3xl custom-shadow hover:-translate-y-2 transition-all cursor-pointer group flex flex-col items-center text-center border border-slate-100"
+               className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer group flex flex-col items-center text-center relative overflow-hidden"
             >
+               <div className={`absolute top-0 right-0 w-2 h-full bg-${item.color}-500 opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                <div className={`w-16 h-16 rounded-2xl bg-${item.color}-50 text-${item.color}-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner`}>
                   <item.icon size={28} />
                </div>
-               <h4 className="text-2xl font-black text-slate-800">{item.val}</h4>
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{item.label}</span>
+               <h4 className="text-3xl font-black text-slate-800">{item.val}</h4>
+               <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest mt-2">{item.label}</span>
+               <span className="text-[9px] font-bold text-slate-400 mt-1">{item.desc}</span>
             </div>
          ))}
       </div>
 
-      {/* Large Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-         <div className="lg:col-span-2 bg-gradient-to-br from-white via-white to-slate-50/50 p-10 rounded-3xl custom-shadow relative overflow-hidden border border-slate-100">
+         <div className="lg:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
             <div className="flex items-center justify-between mb-10">
                <div>
                   <h3 className="text-xl font-black text-slate-800 flex items-center">
-                     <TrendingUp size={24} className="ml-3 text-amber-500" />
-                     مؤشرات الأداء الأسبوعي
+                     <Activity size={24} className="ml-3 text-blue-600" />
+                     مؤشرات النشاط التعليمي العام
                   </h3>
-                  <p className="text-slate-400 text-xs font-bold mt-2">تحليل الحضور ومعدلات التحصيل الأكاديمي</p>
+                  <p className="text-slate-400 text-xs font-bold mt-2">تحليل تفاعلي للتحصيل والحضور الأسبوعي لكافة الحلقات</p>
                </div>
             </div>
             
@@ -192,8 +194,8 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                   <AreaChart data={chartData}>
                      <defs>
                         <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
-                           <stop offset="5%" stopColor="#d97706" stopOpacity={0.2}/>
-                           <stop offset="95%" stopColor="#d97706" stopOpacity={0}/>
+                           <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                           <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                         </linearGradient>
                      </defs>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -203,48 +205,47 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                         contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)'}} 
                         itemStyle={{fontWeight: 'bold', fontSize: '13px'}}
                      />
-                     <Area type="monotone" dataKey="attendance" stroke="#d97706" strokeWidth={4} fill="url(#colorAttendance)" />
+                     <Area type="monotone" dataKey="attendance" stroke="#3b82f6" strokeWidth={4} fill="url(#colorAttendance)" />
                   </AreaChart>
                </ResponsiveContainer>
             </div>
          </div>
 
-         {/* Side Cards */}
          <div className="space-y-6">
-            <div className="bg-premium-dark p-8 rounded-3xl text-white relative overflow-hidden group h-1/2">
+            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white relative overflow-hidden group h-1/2">
                <div className="relative z-10 h-full flex flex-col justify-between">
                   <div>
                     <div className="p-3 bg-white/10 rounded-2xl inline-block mb-4"><Trophy size={28} className="text-amber-400" /></div>
-                    <h4 className="text-2xl font-black mb-2">نخبة الطلاب</h4>
+                    <h4 className="text-2xl font-black mb-2">تقارير الجودة والتقييم</h4>
                     <p className="text-slate-400 text-xs font-medium leading-relaxed mb-6">
-                       طالب واحد من المستوى الثالث حقق الدرجة الكاملة اليوم.
+                       مراجعة تقييمات الحصص اليومية لضمان التزام المحاضرين بالمعايير التعليمية للمركز.
                     </p>
                   </div>
-                  <button onClick={() => navigate('/achievements')} className="w-full py-3.5 bg-amber-500 text-slate-900 rounded-2xl text-xs font-black hover:bg-amber-400 transition-colors shadow-lg">
-                     فتح لوحة الأوائل
+                  <button onClick={() => navigate('/class-evaluation')} className="w-full py-3.5 bg-blue-600 text-white rounded-2xl text-xs font-black hover:bg-blue-500 transition-colors shadow-lg">
+                     فتح سجل التقييمات
                   </button>
                </div>
-               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px]"></div>
+               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]"></div>
             </div>
 
-            <div className="bg-gradient-to-br from-white to-slate-50 p-8 rounded-3xl custom-shadow border border-slate-100 h-1/2">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm h-1/2">
                <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center shadow-inner">
                      <AlertTriangle size={24} />
                   </div>
                   <div>
-                     <h4 className="font-black text-slate-800 text-base">تنبيهات حرجة</h4>
-                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">إجراءات مطلوبة</p>
+                     <h4 className="font-black text-slate-800 text-base">تنبيهات الإشراف</h4>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">إحصائيات النظام اللحظية</p>
                   </div>
                </div>
                <div className="space-y-3">
                   <div className="flex items-center text-[11px] font-bold text-slate-600 bg-rose-50/30 p-3 rounded-2xl border border-rose-100">
                      <div className="w-2 h-2 rounded-full bg-rose-500 ml-2 animate-ping"></div>
-                     انتهاء صلاحية اشتراك {studentMetrics.stopped} طلاب
+                     يوجد {studentMetrics.stopped} طلاب متوقفين عن الدراسة حالياً
                   </div>
-                  <div className="flex items-center text-[11px] font-bold text-slate-600 bg-amber-50/30 p-3 rounded-2xl border border-amber-100">
-                     <div className="w-2 h-2 rounded-full bg-amber-500 ml-2"></div>
-                     تحذير: ضرورة مراجعة سجلات الحضور
+                  <div className="flex items-center text-[11px] font-bold text-slate-600 bg-blue-50/30 p-3 rounded-2xl border border-blue-100">
+                     <div className="w-2 h-2 rounded-full bg-blue-500 ml-2"></div>
+                     إجمالي المسجلين في سجل المحاضرين: {stats.teachers.length} معلم
                   </div>
                </div>
             </div>
