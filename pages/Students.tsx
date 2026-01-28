@@ -39,7 +39,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [user]);
 
   const fetchStudents = async () => {
     try {
@@ -50,9 +50,12 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
       ]);
       
       let filteredStudents = studentsData || [];
-      if (user && user.role === 'teacher') {
+      
+      // منطق عرض طلاب المحاضر فقط
+      if (isTeacher && user?.full_name) {
         filteredStudents = filteredStudents.filter((s: Student) => s.teacher_name === user.full_name);
       }
+      
       setStudents(filteredStudents);
       setProfiles(profilesData || []);
     } catch (error) {
@@ -104,15 +107,20 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
             <div className="p-3 bg-blue-700 text-white rounded-2xl ml-4 shadow-xl">
                <Users size={28} />
             </div>
-            شؤون الطلاب
+            {isTeacher ? 'طلابي المخصصين' : 'شؤون الطلاب'}
           </h2>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 mr-1">إدارة الملفات الأكاديمية والبيانات الموحدة</p>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 mr-1">
+            {isTeacher ? `قائمة الطلاب التابعين لمحاضرة: ${user?.full_name}` : 'إدارة الملفات الأكاديمية والبيانات الموحدة'}
+          </p>
         </div>
         
-        <button onClick={() => navigate('/students/form')} className="bg-gradient-to-r from-blue-700 to-indigo-600 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center shadow-xl hover:scale-105 transition-all active:scale-95">
-          <Plus size={18} className="ml-2" />
-          تسجيل طالب جديد
-        </button>
+        {/* إخفاء زر تسجيل طالب جديد للمحاضر */}
+        {!isTeacher && (
+          <button onClick={() => navigate('/students/form')} className="bg-gradient-to-r from-blue-700 to-indigo-600 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center shadow-xl hover:scale-105 transition-all active:scale-95">
+            <Plus size={18} className="ml-2" />
+            تسجيل طالب جديد
+          </button>
+        )}
       </div>
 
       {/* Tools Section */}
@@ -196,7 +204,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
           <div className="py-40 text-center">
             <Users size={80} className="mx-auto text-slate-100 mb-6" />
             <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد سجلات مطابقة</h3>
-            <p className="text-slate-400 font-bold text-sm">ابدأ بإضافة الطلاب أو قم بتغيير معايير البحث.</p>
+            <p className="text-slate-400 font-bold text-sm">لا يوجد طلاب مسجلين لهذا المحاضر حالياً.</p>
           </div>
         ) : (
           <div className="overflow-x-auto no-scrollbar">

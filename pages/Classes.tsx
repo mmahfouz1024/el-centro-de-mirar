@@ -11,7 +11,10 @@ import {
   GraduationCap, 
   Calendar,
   ListOrdered,
-  List
+  List,
+  Timer,
+  // Added ArrowLeftRight to fix missing import error
+  ArrowLeftRight
 } from 'lucide-react';
 import { db } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +26,8 @@ interface Halaqa {
   studentsCount: number;
   target_student?: string;
   duration?: string;
+  start_time?: string;
+  end_time?: string;
   class_type?: string;
   registration_day?: string;
   registration_date?: string;
@@ -34,7 +39,6 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
   const [classes, setClasses] = useState<Halaqa[]>([]);
   const [studentsList, setStudentsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterStudent, setFilterStudent] = useState('');
@@ -204,16 +208,19 @@ const Classes: React.FC<{ user?: any }> = ({ user }) => {
                       الطالب: {halaqa.target_student}
                     </div>
                   )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-[11px] font-black text-slate-600">
+                      <Clock size={14} className="ml-2 text-amber-600" />
+                      {halaqa.start_time || '--:--'}
+                      <ArrowLeftRight size={10} className="mx-2 text-slate-300" />
+                      {halaqa.end_time || '--:--'}
+                    </div>
+                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{halaqa.duration} دقيقة</span>
+                  </div>
                   {halaqa.class_type && (
                     <div className="flex items-center text-[11px] font-black text-slate-600">
                       <List size={14} className="ml-2 text-purple-600" />
-                      اللغة: {halaqa.class_type}
-                    </div>
-                  )}
-                  {halaqa.duration && (
-                    <div className="flex items-center text-[11px] font-black text-slate-600">
-                      <Clock size={14} className="ml-2 text-amber-600" />
-                      المدة: {halaqa.duration} دقيقة
+                      المسار: {halaqa.class_type}
                     </div>
                   )}
                </div>

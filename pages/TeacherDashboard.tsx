@@ -11,7 +11,8 @@ import {
   Loader2,
   Trophy,
   BookOpen,
-  ArrowRightLeft,
+  // Fixed typo: renamed ArrowRightLeft to ArrowLeftRight
+  ArrowLeftRight,
   CheckCircle2,
   Save,
   CheckSquare,
@@ -182,7 +183,8 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                         >
                             {teacherClasses.map(c => <option key={c.id} value={c.name} className="text-slate-900">{c.name}</option>)}
                         </select>
-                        <ArrowRightLeft size={16} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+                        {/* Fixed typo: renamed ArrowRightLeft to ArrowLeftRight */}
+                        <ArrowLeftRight size={16} className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
                     </div>
                     
                     <div className="flex-1 w-full flex justify-between items-center px-4">

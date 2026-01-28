@@ -12,7 +12,12 @@ import {
   Calendar,
   CalendarDays,
   Globe,
-  Layers
+  Layers,
+  Clock,
+  Timer,
+  Hash,
+  Check,
+  Edit3
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { db } from '../services/supabase';
@@ -35,6 +40,7 @@ const COUNTRY_DATA: Record<string, string> = {
 const COUNTRIES = Object.keys(COUNTRY_DATA);
 const CURRENCIES = ['درهم إماراتي', 'ريال سعودي', 'ريال عماني', 'ريال قطري', 'دينار أردني', 'دينار كويتي', 'دولار امريكي', 'جنيه مصري', 'ليرة تركية', 'يورو'];
 const LANGUAGE_OPTIONS = ['اسبانى', 'انجليزى', 'المانى', 'فرنساوى', 'ايطالى'];
+const DAYS_OF_WEEK = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
 
 const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
   const navigate = useNavigate();
@@ -68,14 +74,15 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
     teacher_name: '',
     supervisor_name: '',
     paid_amount: '',
-    currency: 'درهم إماراتي', // القيمة الافتراضية الجديدة
+    currency: 'جنيه مصري', 
     renewal_status: 'undecided',
     recitation_level: 'متوسط',
     memorization_status: '',
     interview_notes: '',
     admission_result: 'قبول',
     enrolled_language: 'اسبانى',
-    required_sessions_count: 1,
+    required_sessions_count: '', // جعلناها نصية للتحكم اليدوي
+    session_duration: 30, // قيمة افتراضية في الخلفية فقط
     preferred_schedule: {} as Record<string, { from: string, to: string }>
   };
 
@@ -96,7 +103,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
         paid_amount: editingStudent.paid_amount ? editingStudent.paid_amount.toString() : '',
         last_hifz_date: editingStudent.last_hifz_date || '',
         join_date: editingStudent.join_date ? editingStudent.join_date.split('T')[0] : new Date().toISOString().split('T')[0],
-        required_sessions_count: editingStudent.required_sessions_count || 1,
+        required_sessions_count: editingStudent.required_sessions_count?.toString() || '',
         preferred_schedule: editingStudent.preferred_schedule || {},
         renewal_status: editingStudent.renewal_status || 'undecided',
         level: editingStudent.level || 'مبتدئ'
@@ -112,6 +119,26 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
       ...formData,
       country: country,
       parent_country_code: COUNTRY_DATA[country] || ''
+    });
+  };
+
+  const toggleDaySchedule = (day: string) => {
+    const newSchedule = { ...formData.preferred_schedule };
+    if (newSchedule[day]) {
+      delete newSchedule[day];
+    } else {
+      newSchedule[day] = { from: '16:00', to: '16:30' };
+    }
+    setFormData({ ...formData, preferred_schedule: newSchedule });
+  };
+
+  const updateDayTime = (day: string, type: 'from' | 'to', value: string) => {
+    setFormData({
+      ...formData,
+      preferred_schedule: {
+        ...formData.preferred_schedule,
+        [day]: { ...formData.preferred_schedule[day], [type]: value }
+      }
     });
   };
 
@@ -148,7 +175,8 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
         last_hifz_date: formData.last_hifz_date || null,
         join_date: formData.join_date || new Date().toISOString(),
         enrolled_language: formData.enrolled_language,
-        required_sessions_count: Number(formData.required_sessions_count) || 1,
+        required_sessions_count: Number(formData.required_sessions_count) || 0,
+        session_duration: 30, // محذوف من الواجهة ولكن محفوظ بقيمة افتراضية
         preferred_schedule: formData.preferred_schedule
       };
 
@@ -181,7 +209,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-100 p-8 lg:p-12">
+      <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 lg:p-12">
         <form onSubmit={handleSubmit} className="space-y-10">
           
           {/* 1. المعلومات الأساسية واللغة */}
@@ -220,7 +248,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المستوى (إدخال يدوي)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المستوى</label>
                 <div className="relative">
                   <Layers className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                   <input 
@@ -245,19 +273,82 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">العمر (بالسنين)</label>
                 <input type="number" required min="4" max="90" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} placeholder="مثال: 10" />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المعلم المخصص</label>
-                <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer appearance-none" value={formData.teacher_name} onChange={e => setFormData({...formData, teacher_name: e.target.value})} disabled={user?.role === 'teacher'}>
-                  <option value="">اختر المعلم</option>
-                  {teachersList.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
-                </select>
+            </div>
+          </section>
+
+          {/* 4. تفاصيل المواعيد والجدول الدراسي */}
+          <section className="space-y-6 border-t border-slate-50 pt-8">
+            <div className="flex items-center space-x-2 space-x-reverse text-purple-700 mb-4">
+              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center font-black text-sm">2</div>
+              <h4 className="font-black text-lg">تفاصيل المواعيد والجدول الدراسي</h4>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8">
+              <div className="space-y-1.5 max-w-md">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
+                  <Edit3 size={12} className="ml-1 text-purple-600" /> إجمالي عدد المحاضرات (يدوي)
+                </label>
+                <div className="relative">
+                  <Hash className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <input 
+                    type="number" 
+                    required 
+                    min="1"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-black text-slate-800 outline-none focus:ring-4 focus:ring-purple-500/10 transition-all"
+                    value={formData.required_sessions_count}
+                    onChange={e => setFormData({...formData, required_sessions_count: e.target.value})}
+                    placeholder="أدخل عدد المحاضرات الإجمالي..."
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المشرف المسؤول</label>
-                <select className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer appearance-none" value={formData.supervisor_name} onChange={e => setFormData({...formData, supervisor_name: e.target.value})}>
-                  <option value="">اختر المشرف</option>
-                  {supervisorsList.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>)}
-                </select>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
+                <Clock size={12} className="ml-1 text-purple-600" /> تحديد المواعيد المفضلة أسبوعياً
+              </label>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {DAYS_OF_WEEK.map(day => {
+                  const isSelected = !!formData.preferred_schedule[day];
+                  return (
+                    <div key={day} className={`p-4 rounded-2xl border-2 transition-all ${isSelected ? 'bg-purple-50 border-purple-200' : 'bg-white border-slate-50 hover:border-slate-100'}`}>
+                       <button 
+                        type="button"
+                        onClick={() => toggleDaySchedule(day)}
+                        className="flex items-center justify-between w-full mb-3"
+                       >
+                          <span className={`text-xs font-black ${isSelected ? 'text-purple-700' : 'text-slate-400'}`}>{day}</span>
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isSelected ? 'bg-purple-600 text-white' : 'bg-slate-100 text-transparent'}`}>
+                             <Check size={14} />
+                          </div>
+                       </button>
+
+                       {isSelected && (
+                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex items-center justify-between">
+                               <span className="text-[8px] font-black text-slate-400 uppercase">من</span>
+                               <input 
+                                type="time" 
+                                className="bg-white border border-purple-100 rounded-lg px-2 py-1 text-[10px] font-bold outline-none"
+                                value={formData.preferred_schedule[day].from}
+                                onChange={e => updateDayTime(day, 'from', e.target.value)}
+                               />
+                            </div>
+                            <div className="flex items-center justify-between">
+                               <span className="text-[8px] font-black text-slate-400 uppercase">إلى</span>
+                               <input 
+                                type="time" 
+                                className="bg-white border border-purple-100 rounded-lg px-2 py-1 text-[10px] font-bold outline-none"
+                                value={formData.preferred_schedule[day].to}
+                                onChange={e => updateDayTime(day, 'to', e.target.value)}
+                               />
+                            </div>
+                         </div>
+                       )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </section>
@@ -265,7 +356,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
           {/* 2. التواصل والموقع الجغرافي */}
           <section className="space-y-6 border-t border-slate-50 pt-8">
             <div className="flex items-center space-x-2 space-x-reverse text-amber-600 mb-4">
-              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-black text-sm">2</div>
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-black text-sm">3</div>
               <h4 className="font-black text-lg">التواصل والموقع الجغرافي</h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -292,7 +383,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
           {/* 3. بيانات الاشتراك والمالية */}
           <section className="space-y-6 border-t border-slate-50 pt-8">
             <div className="flex items-center space-x-2 space-x-reverse text-emerald-700 mb-4">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center font-black text-sm">3</div>
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center font-black text-sm">4</div>
               <h4 className="font-black text-lg">بيانات الاشتراك والمالية</h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -337,7 +428,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
                 </label>
                 <input 
                   type="date" 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-purple-500/10" 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10" 
                   value={formData.subscription_start_date} 
                   onChange={e => setFormData({...formData, subscription_start_date: e.target.value})} 
                 />
@@ -345,7 +436,7 @@ const StudentForm: React.FC<{ user?: any }> = ({ user }) => {
             </div>
           </section>
 
-          <button type="submit" disabled={actionLoading} className="w-full bg-blue-700 text-white py-6 rounded-[1.5rem] font-black text-lg shadow-xl shadow-blue-100 hover:bg-blue-800 transition-all flex items-center justify-center active:scale-95 disabled:opacity-50 mt-8">
+          <button type="submit" disabled={actionLoading} className="w-full bg-blue-700 text-white py-6 rounded-[2.5rem] font-black text-lg shadow-xl shadow-blue-100 hover:bg-blue-800 transition-all flex items-center justify-center active:scale-95 disabled:opacity-50 mt-8">
             {actionLoading ? <Loader2 className="animate-spin ml-2" size={24} /> : <CheckCircle2 className="ml-2" size={24} />}
             {editingStudent ? 'تحديث بيانات الطالب' : 'إتمام تسجيل الطالب'}
           </button>

@@ -16,7 +16,9 @@ import {
   Sparkles,
   ChevronLeft,
   ArrowUpRight,
-  Activity
+  Activity,
+  UserPlus,
+  UserMinus
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -79,6 +81,14 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
     }
   };
 
+  // حساب إحصائيات الطلاب المطلوبة
+  const studentMetrics = useMemo(() => {
+    const total = stats.students.length;
+    const renewed = stats.students.filter(s => s.renewal_status === 'yes').length;
+    const stopped = stats.students.filter(s => s.renewal_status === 'no').length;
+    return { total, renewed, stopped };
+  }, [stats.students]);
+
   const chartData = useMemo(() => {
     const days = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
     const baseValue = stats.students.length > 0 ? stats.students.length * 0.8 : 10;
@@ -97,9 +107,9 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
   );
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-1000">
+    <div className="space-y-12 animate-in fade-in duration-1000 text-right" dir="rtl">
       
-      {/* Welcome Hero - updated to 1.5rem radius */}
+      {/* Welcome Hero */}
       <div className={`p-10 lg:p-14 rounded-3xl text-white shadow-2xl relative overflow-hidden bg-premium-dark`}>
          <div className="absolute top-0 right-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')]"></div>
          <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-amber-500/20 rounded-full blur-[120px] animate-pulse"></div>
@@ -109,7 +119,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
             <div className="text-right space-y-6">
                <div className="inline-flex items-center px-6 py-2 bg-white/10 rounded-full border border-white/20 backdrop-blur-md">
                   {isGenSup ? <Crown size={20} className="ml-3 text-amber-400" /> : <ShieldCheck size={20} className="ml-3 text-emerald-400" />}
-                  <span className="text-[12px] font-black uppercase tracking-[0.3em]">{isGenSup ? 'رئيس هيئة الإشراف' : 'لوحة القيادة الذكية'}</span>
+                  <span className="text-[12px] font-black uppercase tracking-[0.3em]">{isGenSup ? 'رئيس هيئة الإشراف' : 'لوحة الإشراف الذكية'}</span>
                </div>
                <h2 className="text-4xl lg:text-6xl font-black leading-[1.1] tracking-tight">
                   مرحباً بك في <br/>
@@ -128,7 +138,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                   <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
                      <Users size={28} className="text-white" />
                   </div>
-                  <span className="block text-4xl font-black">{stats.students.length}</span>
+                  <span className="block text-4xl font-black">{studentMetrics.total}</span>
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mt-2 block">طالب نشط</span>
                </div>
                <div className="glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
@@ -142,13 +152,13 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
          </div>
       </div>
 
-      {/* KPI Stats Grid - updated to 1.5rem radius and subtle gradient */}
+      {/* KPI Stats Grid - تم تحديث العناصر المطلوبة */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
          {[
             { label: 'سجل المحاضرين', icon: GraduationCap, val: stats.teachers.length, path: '/teachers', color: 'blue' },
-            { label: 'طلبات الاشتراك', icon: UserCheck, val: 12, path: '/subscriptions', color: 'emerald' },
-            { label: 'تقييم الجودة', icon: Star, val: '4.8', path: '/class-evaluation', color: 'amber' },
-            { label: 'النمو الشهري', icon: Activity, val: '+15%', path: '/reports', color: 'purple' },
+            { label: 'إجمالي الطلاب', icon: Users, val: studentMetrics.total, path: '/students', color: 'indigo' },
+            { label: 'الطلاب المجددون', icon: UserCheck, val: studentMetrics.renewed, path: '/renewal-followup', color: 'emerald' },
+            { label: 'الطلاب المتوقفون', icon: UserMinus, val: studentMetrics.stopped, path: '/renewal-followup', color: 'rose' },
          ].map((item, idx) => (
             <div 
                key={idx} 
@@ -164,7 +174,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
          ))}
       </div>
 
-      {/* Large Charts Section - updated to 1.5rem radius and subtle gradient */}
+      {/* Large Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <div className="lg:col-span-2 bg-gradient-to-br from-white via-white to-slate-50/50 p-10 rounded-3xl custom-shadow relative overflow-hidden border border-slate-100">
             <div className="flex items-center justify-between mb-10">
@@ -199,7 +209,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
             </div>
          </div>
 
-         {/* Side Cards - updated to 1.5rem radius */}
+         {/* Side Cards */}
          <div className="space-y-6">
             <div className="bg-premium-dark p-8 rounded-3xl text-white relative overflow-hidden group h-1/2">
                <div className="relative z-10 h-full flex flex-col justify-between">
@@ -210,7 +220,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                        طالب واحد من المستوى الثالث حقق الدرجة الكاملة اليوم.
                     </p>
                   </div>
-                  <button className="w-full py-3.5 bg-amber-500 text-slate-900 rounded-2xl text-xs font-black hover:bg-amber-400 transition-colors shadow-lg">
+                  <button onClick={() => navigate('/achievements')} className="w-full py-3.5 bg-amber-500 text-slate-900 rounded-2xl text-xs font-black hover:bg-amber-400 transition-colors shadow-lg">
                      فتح لوحة الأوائل
                   </button>
                </div>
@@ -230,11 +240,11 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                <div className="space-y-3">
                   <div className="flex items-center text-[11px] font-bold text-slate-600 bg-rose-50/30 p-3 rounded-2xl border border-rose-100">
                      <div className="w-2 h-2 rounded-full bg-rose-500 ml-2 animate-ping"></div>
-                     انتهاء صلاحية اشتراك 5 طلاب
+                     انتهاء صلاحية اشتراك {studentMetrics.stopped} طلاب
                   </div>
                   <div className="flex items-center text-[11px] font-bold text-slate-600 bg-amber-50/30 p-3 rounded-2xl border border-amber-100">
                      <div className="w-2 h-2 rounded-full bg-amber-500 ml-2"></div>
-                     محاضر لم يرصد حضور حلقة اليوم
+                     تحذير: ضرورة مراجعة سجلات الحضور
                   </div>
                </div>
             </div>

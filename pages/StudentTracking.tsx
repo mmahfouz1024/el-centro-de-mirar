@@ -13,7 +13,8 @@ import {
   BookOpen, 
   Calendar, 
   Save, 
-  ArrowRightLeft, 
+  // Fixed typo: renamed ArrowRightLeft to ArrowLeftRight
+  ArrowLeftRight, 
   History, 
   Clock, 
   ChevronDown, 
@@ -414,7 +415,8 @@ const StudentTracking: React.FC = () => {
                {[
                  { id: 'revision', label: 'المراجعة البعيدة', icon: History },
                  { id: 'fixing', label: 'المراجعة القريبة', icon: Check },
-                 { id: 'yesterday_hifz', label: 'واجب الأمس', icon: ArrowRightLeft },
+                 // Fixed typo: renamed ArrowRightLeft to ArrowLeftRight
+                 { id: 'yesterday_hifz', label: 'واجب الأمس', icon: ArrowLeftRight },
                  { id: 'hifz', label: 'الحفظ الجديد', icon: BookOpen },
                ].map(tab => (
                   <button
