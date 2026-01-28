@@ -78,6 +78,7 @@ export interface Student {
   
   // Scheduling
   required_sessions_count?: number;
+  session_duration?: number;
   preferred_schedule?: any;
 }
 
