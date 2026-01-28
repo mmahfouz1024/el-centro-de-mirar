@@ -3,32 +3,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ClipboardCheck, 
   User, 
-  BookOpen, 
   Wifi, 
   Camera, 
   BrainCircuit, 
   Users, 
   Save, 
   Loader2,
-  CheckCircle2,
-  Star,
-  Activity,
-  UserCheck,
   TrendingUp,
   Search,
-  MessageSquare,
-  ShieldCheck,
-  Percent,
   PlusCircle,
   Eye,
-  ShieldAlert,
-  X,
-  ChevronLeft,
   AlertTriangle,
-  GraduationCap
+  GraduationCap,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { db, formatAppDate } from '../services/supabase';
+import { db } from '../services/supabase';
 
 const RatingInput = ({ label, value, onChange, icon: Icon }: any) => (
   <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group">
@@ -123,14 +114,13 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
     try {
       await db.classEvaluations.create({
         teacher_name: selectedTeacher,
-        student_name: selectedStudent, // تم التغيير من class_name إلى student_name
+        student_name: selectedStudent,
         evaluator_name: user?.full_name || 'مشرف',
         ...ratings,
         notes,
         created_at: new Date().toISOString()
       });
       
-      // نظام التنبيه الفوري للجودة المنخفضة
       if (avgScore < 5) {
         alert('⚠️ تنبيه: تم تسجيل تقييم منخفض (أقل من 5/10). سيتم إخطار الإدارة فوراً لمراجعة أداء المحاضر في هذه الحصة.');
       } else {
@@ -148,34 +138,16 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
     }
   };
 
-  const teacherAnalysis = useMemo(() => {
-    if (!isHighLevel) return [];
-    const stats: Record<string, any> = {};
-    
-    allEvaluations.forEach(ev => {
-      if (!stats[ev.teacher_name]) {
-        stats[ev.teacher_name] = {
-          name: ev.teacher_name,
-          evaluationsCount: 0,
-          totalScore: 0,
-          lowQualityAlerts: 0
-        };
-      }
-      
-      const avg = (ev.internet_quality + ev.camera_usage + ev.focus_level + ev.management_skills) / 4;
-      stats[ev.teacher_name].totalScore += avg;
-      stats[ev.teacher_name].evaluationsCount += 1;
-      if (avg < 5) stats[ev.teacher_name].lowQualityAlerts += 1;
-    });
-
-    return Object.values(stats)
-      .map(s => ({
-        ...s,
-        qualityPercent: Math.round((s.totalScore / s.evaluationsCount) * 10),
-      }))
-      .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => b.qualityPercent - a.qualityPercent);
-  }, [allEvaluations, isHighLevel, searchTerm]);
+  // عرض آخر التقييمات المرصودة بدلاً من الإحصائيات
+  const recentEvaluations = useMemo(() => {
+    return [...allEvaluations]
+      .filter(ev => 
+        ev.teacher_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (ev.student_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 15);
+  }, [allEvaluations, searchTerm]);
 
   if (loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400">
@@ -279,14 +251,14 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
           </div>
         </div>
 
-        {/* Analysis Sidebar */}
+        {/* Sidebar: Recent Evaluations Section */}
         {isHighLevel && (
            <div className="xl:col-span-5 space-y-6">
               <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm h-full flex flex-col">
                  <div className="flex items-center justify-between mb-8">
                     <div>
-                       <h3 className="text-xl font-black text-slate-800">مؤشرات جودة التعليم</h3>
-                       <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">تحليل تراكمي لأداء المحاضرين</p>
+                       <h3 className="text-xl font-black text-slate-800">آخر التقييمات المرصودة</h3>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">تتبع التقييمات اللحظية المدخلة للنظام</p>
                     </div>
                  </div>
 
@@ -294,7 +266,7 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                     <input 
                       type="text" 
-                      placeholder="بحث عن محاضر..." 
+                      placeholder="بحث عن محاضر أو طالب..." 
                       className="w-full bg-slate-50 border border-slate-100 rounded-xl pr-11 pl-4 py-3 text-xs font-bold outline-none"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -302,46 +274,73 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
                  </div>
 
                  <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
-                    {teacherAnalysis.length === 0 ? (
+                    {recentEvaluations.length === 0 ? (
                        <div className="text-center py-20 text-slate-300">
                           <TrendingUp size={48} className="mx-auto mb-4 opacity-20" />
-                          <p className="text-sm font-bold">لا توجد بيانات تحليلية متاحة</p>
+                          <p className="text-sm font-bold">لا توجد تقييمات مرصودة حالياً</p>
                        </div>
-                    ) : teacherAnalysis.map((item: any) => (
-                       <div key={item.name} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group">
-                          <div className="flex justify-between items-start mb-3">
-                             <div className="flex items-center space-x-3 space-x-reverse">
-                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-black text-blue-600 shadow-sm">
-                                   {item.name[0]}
-                                </div>
-                                <div>
-                                   <h4 className="text-sm font-black text-slate-800">{item.name}</h4>
-                                   <div className="flex items-center text-[9px] font-bold text-slate-400 mt-0.5">
-                                      <Users size={10} className="ml-1" />
-                                      {item.evaluationsCount} تقييم مسجل
-                                   </div>
-                                </div>
-                             </div>
-                             <div className="text-left flex flex-col items-end">
-                                <span className={`text-lg font-black ${item.qualityPercent >= 85 ? 'text-emerald-600' : 'text-amber-500'}`}>
-                                   {item.qualityPercent}%
-                                </span>
-                                {item.lowQualityAlerts > 0 && (
-                                   <div className="flex items-center text-[8px] font-black text-rose-500 uppercase bg-rose-50 px-1.5 py-0.5 rounded mt-1">
-                                      <AlertTriangle size={8} className="ml-1" />
-                                      {item.lowQualityAlerts} إنذار جودة
-                                   </div>
-                                )}
-                             </div>
-                          </div>
-                          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                             <div 
-                                className={`h-full transition-all duration-1000 ${item.qualityPercent >= 85 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                                style={{ width: `${item.qualityPercent}%` }}
-                             ></div>
-                          </div>
-                       </div>
-                    ))}
+                    ) : recentEvaluations.map((ev: any) => {
+                       const avg = (ev.internet_quality + ev.camera_usage + ev.focus_level + ev.management_skills) / 4;
+                       const qualityPercent = Math.round(avg * 10);
+                       const dateObj = new Date(ev.created_at);
+                       const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
+                       const dateStr = dateObj.toLocaleDateString('ar-EG');
+
+                       return (
+                         <div key={ev.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group relative overflow-hidden">
+                            {/* Day and Date Badge */}
+                            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-2">
+                               <div className="flex items-center text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+                                  <Calendar size={10} className="ml-1" />
+                                  اليوم: {dayName}
+                               </div>
+                               <div className="flex items-center text-[9px] font-black text-slate-400">
+                                  <Clock size={10} className="ml-1" />
+                                  التاريخ: {dateStr}
+                               </div>
+                            </div>
+
+                            <div className="flex justify-between items-start mb-3">
+                               <div className="flex items-center space-x-3 space-x-reverse">
+                                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-black text-blue-600 shadow-sm">
+                                     {ev.teacher_name[0]}
+                                  </div>
+                                  <div>
+                                     <h4 className="text-sm font-black text-slate-800">{ev.teacher_name}</h4>
+                                     <div className="flex items-center text-[9px] font-bold text-emerald-600 mt-0.5">
+                                        <GraduationCap size={10} className="ml-1" />
+                                        الطالب: {ev.student_name || ev.class_name}
+                                     </div>
+                                  </div>
+                               </div>
+                               <div className="text-left flex flex-col items-end">
+                                  <span className={`text-lg font-black ${qualityPercent >= 85 ? 'text-emerald-600' : qualityPercent >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
+                                     {qualityPercent}%
+                                  </span>
+                                  {avg < 5 && (
+                                     <div className="flex items-center text-[8px] font-black text-rose-500 uppercase bg-rose-50 px-1.5 py-0.5 rounded mt-1">
+                                        <AlertTriangle size={8} className="ml-1" />
+                                        إنذار جودة
+                                     </div>
+                                  )}
+                               </div>
+                            </div>
+                            
+                            {ev.notes && (
+                               <p className="text-[9px] font-bold text-slate-400 mt-2 line-clamp-1 italic">
+                                  "{ev.notes}"
+                               </p>
+                            )}
+
+                            <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden mt-3">
+                               <div 
+                                  className={`h-full transition-all duration-1000 ${qualityPercent >= 85 ? 'bg-emerald-500' : qualityPercent >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                                  style={{ width: `${qualityPercent}%` }}
+                               ></div>
+                            </div>
+                         </div>
+                       );
+                    })}
                  </div>
 
                  <div className="mt-8 pt-6 border-t border-slate-100">
