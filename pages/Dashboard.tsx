@@ -121,14 +121,14 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
             <div className="text-right space-y-6">
                <div className="inline-flex items-center px-6 py-2 bg-white/10 rounded-full border border-white/20 backdrop-blur-md">
                   {user?.role === 'general_supervisor' ? <Crown size={20} className="ml-3 text-amber-400" /> : <ShieldCheck size={20} className="ml-3 text-emerald-400" />}
-                  <span className="text-[12px] font-black uppercase tracking-[0.3em]">{user?.role === 'general_supervisor' ? 'رئيس هيئة الإشراف' : 'لوحة الإشراف المركزية'}</span>
+                  <span className="text-[12px] font-black uppercase tracking-[0.2em]">{user?.role === 'general_supervisor' ? 'رئيس هيئة الإشراف' : 'لوحة الإشراف المركزية'}</span>
                </div>
                <h2 className="text-4xl lg:text-6xl font-black leading-[1.1] tracking-tight">
-                  مركز داود <br/>
-                  <span className="text-gradient-gold">للغات والعلوم</span>
+                  مركز <br/>
+                  <span className="text-gradient-gold uppercase">EL CENTRO DE MIRAR</span> للغات
                </h2>
                <p className="text-slate-300 text-lg font-medium max-w-2xl leading-relaxed">
-                  نظرة شاملة على أداء المركز: إدارة الطاقم التعليمي ومتابعة {studentMetrics.total} طالب مسجل.
+                  نظرة شاملة على أداء المركز: إدارة الطاقم التعليمي ومتابعة {studentMetrics.total} طالب مسجل في مسارات اللغات المختلفة.
                </p>
                <div className="flex gap-4">
                   <button onClick={() => navigate('/students')} className="bg-white text-slate-900 px-8 py-3.5 rounded-2xl font-black text-sm hover:bg-amber-500 hover:text-white transition-all shadow-xl">قاعدة بيانات الطلاب</button>
@@ -137,7 +137,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
             
             <div className="grid grid-cols-2 gap-6 w-full xl:w-auto">
                <div onClick={() => navigate('/students')} className="cursor-pointer glass-card bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl p-8 rounded-3xl border border-white/10 text-center hover:scale-105 transition-all">
-                  <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                  <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
                      <Users size={28} className="text-white" />
                   </div>
                   <span className="block text-4xl font-black">{studentMetrics.total}</span>
@@ -225,7 +225,7 @@ const Dashboard: React.FC<{ user?: any }> = ({ user }) => {
                      فتح سجل التقييمات
                   </button>
                </div>
-               <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]"></div>
+               <div className="absolute -bottom-40 -right-40 w-64 h-64 bg-blue-600/20 rounded-full blur-[80px]"></div>
             </div>
 
             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm h-1/2">
