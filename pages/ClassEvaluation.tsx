@@ -7,354 +7,268 @@ import {
   Camera, 
   BrainCircuit, 
   Users, 
-  Save, 
   Loader2,
-  TrendingUp,
-  Search,
-  PlusCircle,
-  Eye,
-  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
   GraduationCap,
-  Calendar,
-  Clock
+  MessageSquare,
+  Star,
+  ChevronLeft,
+  X
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { db } from '../services/supabase';
-
-const RatingInput = ({ label, value, onChange, icon: Icon }: any) => (
-  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group">
-    <div className="flex items-center justify-between mb-4">
-      <label className="flex items-center text-sm font-black text-slate-700">
-        <Icon size={20} className="ml-2 text-blue-600 group-hover:scale-110 transition-transform" />
-        {label}
-      </label>
-      <span className={`text-lg font-black ${value >= 8 ? 'text-emerald-600' : value >= 5 ? 'text-amber-500' : 'text-rose-500'}`}>
-        {value}/10
-      </span>
-    </div>
-    <div className="flex gap-1 justify-between">
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-        <button
-          key={num}
-          type="button"
-          onClick={() => onChange(num)}
-          className={`flex-1 h-10 rounded-lg font-black text-xs transition-all ${
-            value >= num 
-              ? 'bg-blue-600 text-white shadow-md transform scale-105' 
-              : 'bg-white text-slate-300 hover:bg-blue-50 border border-slate-100'
-          }`}
-        >
-          {num}
-        </button>
-      ))}
-    </div>
-  </div>
-);
+import { useNavigate } from 'react-router-dom';
 
 const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
   const navigate = useNavigate();
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [allEvaluations, setAllEvaluations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   
-  const [selectedTeacher, setSelectedTeacher] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [allStudents, setAllStudents] = useState<any[]>([]);
   
-  const [ratings, setRatings] = useState({
+  const [formData, setFormData] = useState({
+    teacher_name: '',
+    student_name: '',
+    evaluator_name: user?.full_name || '',
     internet_quality: 10,
     camera_usage: 10,
     focus_level: 10,
-    management_skills: 10
+    management_skills: 10,
+    notes: ''
   });
-  
-  const [notes, setNotes] = useState('');
-
-  const isHighLevel = user?.role === 'manager' || user?.role === 'general_supervisor' || user?.role === 'supervisor';
 
   useEffect(() => {
-    fetchData();
+    fetchInitialData();
   }, []);
 
-  const fetchData = async () => {
+  const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const [teachersData, studentsData, evalsData] = await Promise.all([
+      const [teachersData, studentsData] = await Promise.all([
         db.profiles.getTeachers(),
-        db.students.getAll(),
-        db.classEvaluations.getAll()
+        db.students.getAll()
       ]);
       setTeachers(teachersData || []);
-      setStudents(studentsData || []);
-      setAllEvaluations(evalsData || []);
+      setAllStudents(studentsData || []);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching evaluation data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredStudentsForTeacher = useMemo(() => {
-    if (!selectedTeacher) return [];
-    return students.filter(s => s.teacher_name === selectedTeacher);
-  }, [students, selectedTeacher]);
+  // فلترة الطلاب بناءً على المحاضر المختار
+  const filteredStudents = useMemo(() => {
+    if (!formData.teacher_name) return [];
+    return allStudents.filter(s => s.teacher_name === formData.teacher_name);
+  }, [formData.teacher_name, allStudents]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTeacher || !selectedStudent) {
+    if (!formData.teacher_name || !formData.student_name) {
       alert('يرجى اختيار المحاضر والطالب أولاً');
       return;
     }
-
-    const avgScore = (ratings.internet_quality + ratings.camera_usage + ratings.focus_level + ratings.management_skills) / 4;
-
-    setSubmitting(true);
+    
+    setActionLoading(true);
     try {
+      // نستخدم اسم الطالب كاسم للحصة في التقييم
       await db.classEvaluations.create({
-        teacher_name: selectedTeacher,
-        student_name: selectedStudent,
-        evaluator_name: user?.full_name || 'مشرف',
-        ...ratings,
-        notes,
-        created_at: new Date().toISOString()
+        ...formData,
+        class_name: `تقييم حصة: ${formData.student_name}`
       });
-      
-      if (avgScore < 5) {
-        alert('⚠️ تنبيه: تم تسجيل تقييم منخفض (أقل من 5/10). سيتم إخطار الإدارة فوراً لمراجعة أداء المحاضر في هذه الحصة.');
-      } else {
-        alert('تم حفظ التقييم بنجاح');
-      }
-
-      setNotes('');
-      setSelectedStudent('');
-      setSelectedTeacher('');
-      fetchData();
+      alert('تم اعتماد تقرير الجودة بنجاح');
+      navigate('/evaluations-list');
     } catch (error) {
-      alert('حدث خطأ أثناء الحفظ');
+      alert('حدث خطأ أثناء حفظ التقييم');
     } finally {
-      setSubmitting(false);
+      setActionLoading(false);
     }
   };
 
-  // عرض آخر التقييمات المرصودة بدلاً من الإحصائيات
-  const recentEvaluations = useMemo(() => {
-    return [...allEvaluations]
-      .filter(ev => 
-        ev.teacher_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (ev.student_name || '').toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 15);
-  }, [allEvaluations, searchTerm]);
+  const RatingSlider = ({ label, icon: Icon, value, field, color }: any) => (
+    <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 space-y-4 hover:border-blue-200 transition-all">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-2xl bg-white shadow-sm ${color}`}>
+            <Icon size={20} />
+          </div>
+          <span className="text-sm font-black text-slate-700">{label}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+           <span className={`text-xl font-black ${color}`}>{value}</span>
+           <span className="text-[10px] font-bold text-slate-400 uppercase">/ 10</span>
+        </div>
+      </div>
+      <input 
+        type="range" min="1" max="10" 
+        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        value={value}
+        onChange={(e) => setFormData({...formData, [field]: parseInt(e.target.value)})}
+      />
+      <div className="flex justify-between px-1">
+        <span className="text-[9px] font-black text-rose-400 uppercase tracking-tighter">ضعيف جداً</span>
+        <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">ممتاز ومثالي</span>
+      </div>
+    </div>
+  );
 
   if (loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400">
       <Loader2 className="animate-spin mb-4" size={48} />
-      <p className="font-black text-xs uppercase tracking-widest">جاري مزامنة بيانات الجودة...</p>
+      <p className="font-black text-xs uppercase tracking-widest text-slate-800">جاري فتح نموذج الجودة...</p>
     </div>
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20 text-right" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div className="flex items-center space-x-3 space-x-reverse">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl shadow-sm">
-            <ClipboardCheck size={32} />
-          </div>
+    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 text-right" dir="rtl">
+      {/* Header Card */}
+      <div className="bg-premium-dark p-10 rounded-huge text-white shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')]"></div>
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tight">تقييم جودة الحصص (متابعة لحظية)</h2>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">تقييم أداء المحاضر مع الطالب قبل أو أثناء تسجيل الحصة</p>
+            <div className="inline-flex items-center px-4 py-1.5 bg-white/10 rounded-full border border-white/20 mb-4 backdrop-blur-md">
+              <ShieldCheck size={16} className="ml-2 text-blue-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest">قسم الرقابة وضبط الجودة</span>
+            </div>
+            <h2 className="text-4xl font-black mb-2">تقييم الأداء الميداني</h2>
+            <p className="text-slate-400 font-medium text-sm">مراجعة المعايير التقنية والتعليمية خلال البث المباشر للمحاضرة</p>
+          </div>
+          <div className="p-5 bg-white/5 rounded-[2rem] border border-white/10 shadow-inner">
+            <ClipboardCheck size={48} className="text-blue-400" />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {/* Form Section */}
-        <div className="xl:col-span-7 space-y-6">
-          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 h-fit">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-slate-800 flex items-center">
-                <PlusCircle size={20} className="ml-2 text-blue-500" />
-                إدخال تقييم جديد
-              </h3>
-              <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">مراقبة مباشرة</span>
+      <form onSubmit={handleSubmit} className="bg-white p-8 lg:p-14 rounded-huge border border-slate-100 shadow-sm space-y-12">
+        
+        {/* Step 1: Selection */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 mb-6">
+             <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-lg">1</div>
+             <h3 className="text-lg font-black text-slate-800">تحديد أطراف المحاضرة</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mr-2">المحاضر المُراد تقييمه</label>
+              <div className="relative">
+                <User className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                <select 
+                  required
+                  className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] pr-14 pl-5 py-5 text-sm font-black outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer transition-all"
+                  value={formData.teacher_name}
+                  onChange={(e) => setFormData({...formData, teacher_name: e.target.value, student_name: ''})}
+                >
+                  <option value="">-- اختر المحاضر --</option>
+                  {teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
+                </select>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
-                    <User size={14} className="ml-1 text-blue-600" />
-                    المحاضر
-                  </label>
-                  <select 
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
-                    value={selectedTeacher}
-                    onChange={(e) => { setSelectedTeacher(e.target.value); setSelectedStudent(''); }}
-                    required
-                  >
-                    <option value="">-- اختر المحاضر --</option>
-                    {teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
-                    <GraduationCap size={14} className="ml-1 text-emerald-600" />
-                    الطالب (الحصة الحالية)
-                  </label>
-                  <select 
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50"
-                    value={selectedStudent}
-                    onChange={(e) => setSelectedStudent(e.target.value)}
-                    disabled={!selectedTeacher}
-                    required
-                  >
-                    <option value="">-- اختر الطالب الجاري تقييمه --</option>
-                    {filteredStudentsForTeacher.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                  </select>
-                </div>
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mr-2">الطالب المستهدف</label>
+              <div className="relative">
+                <GraduationCap className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                <select 
+                  required
+                  disabled={!formData.teacher_name}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] pr-14 pl-5 py-5 text-sm font-black outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer transition-all disabled:opacity-50"
+                  value={formData.student_name}
+                  onChange={(e) => setFormData({...formData, student_name: e.target.value})}
+                >
+                  <option value="">{formData.teacher_name ? '-- اختر الطالب --' : 'يرجى اختيار المحاضر أولاً'}</option>
+                  {filteredStudents.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                </select>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <RatingInput label="جودة الإنترنت والاتصال" value={ratings.internet_quality} onChange={(v: any) => setRatings({...ratings, internet_quality: v})} icon={Wifi} />
-                <RatingInput label="التزام المحاضر بفتح الكاميرا" value={ratings.camera_usage} onChange={(v: any) => setRatings({...ratings, camera_usage: v})} icon={Camera} />
-                <RatingInput label="تركيز المحاضر واستيعابه" value={ratings.focus_level} onChange={(v: any) => setRatings({...ratings, focus_level: v})} icon={BrainCircuit} />
-                <RatingInput label="مهارات إدارة الحصة والوقت" value={ratings.management_skills} onChange={(v: any) => setRatings({...ratings, management_skills: v})} icon={Users} />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mr-1">ملاحظات المشرف الإضافية</label>
-                <textarea 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none h-32"
-                  placeholder="اكتب أي ملاحظات فنية أو تربوية لاحظتها خلال التقييم..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={submitting}
-                className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl hover:bg-black transition-all flex items-center justify-center active:scale-95 disabled:opacity-50"
-              >
-                {submitting ? <Loader2 className="animate-spin ml-3" size={24} /> : <Save className="ml-3" size={24} />}
-                اعتماد وحفظ تقرير التقييم
-              </button>
-            </form>
+              {formData.teacher_name && filteredStudents.length === 0 && (
+                <p className="text-[10px] font-bold text-rose-500 mt-2 mr-2">لا يوجد طلاب مسجلين لهذا المحاضر حالياً.</p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Sidebar: Recent Evaluations Section */}
-        {isHighLevel && (
-           <div className="xl:col-span-5 space-y-6">
-              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm h-full flex flex-col">
-                 <div className="flex items-center justify-between mb-8">
-                    <div>
-                       <h3 className="text-xl font-black text-slate-800">آخر التقييمات المرصودة</h3>
-                       <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">تتبع التقييمات اللحظية المدخلة للنظام</p>
-                    </div>
-                 </div>
+        {/* Step 2: Quality Metrics */}
+        <div className="space-y-8">
+          <div className="flex items-center gap-3 mb-6">
+             <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-lg">2</div>
+             <h3 className="text-lg font-black text-slate-800">مؤشرات جودة الأداء</h3>
+          </div>
 
-                 <div className="relative mb-6">
-                    <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                    <input 
-                      type="text" 
-                      placeholder="بحث عن محاضر أو طالب..." 
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl pr-11 pl-4 py-3 text-xs font-bold outline-none"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                 </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <RatingSlider 
+              label="جودة الاتصال والإنترنت" 
+              icon={Wifi} 
+              value={formData.internet_quality} 
+              field="internet_quality"
+              color="text-blue-600"
+            />
+            <RatingSlider 
+              label="الالتزام بفتح الكاميرا" 
+              icon={Camera} 
+              value={formData.camera_usage} 
+              field="camera_usage"
+              color="text-purple-600"
+            />
+            <RatingSlider 
+              label="مستوى تركيز المحاضر" 
+              icon={BrainCircuit} 
+              value={formData.focus_level} 
+              field="focus_level"
+              color="text-amber-600"
+            />
+            <RatingSlider 
+              label="مهارات إدارة الوقت والحصة" 
+              icon={Users} 
+              value={formData.management_skills} 
+              field="management_skills"
+              color="text-emerald-600"
+            />
+          </div>
+        </div>
 
-                 <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
-                    {recentEvaluations.length === 0 ? (
-                       <div className="text-center py-20 text-slate-300">
-                          <TrendingUp size={48} className="mx-auto mb-4 opacity-20" />
-                          <p className="text-sm font-bold">لا توجد تقييمات مرصودة حالياً</p>
-                       </div>
-                    ) : recentEvaluations.map((ev: any) => {
-                       const avg = (ev.internet_quality + ev.camera_usage + ev.focus_level + ev.management_skills) / 4;
-                       const qualityPercent = Math.round(avg * 10);
-                       const dateObj = new Date(ev.created_at);
-                       const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
-                       const dateStr = dateObj.toLocaleDateString('ar-EG');
+        {/* Step 3: Notes */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 mb-4">
+             <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-lg">3</div>
+             <h3 className="text-lg font-black text-slate-800">التعليقات الختامية</h3>
+          </div>
+          <div className="relative">
+            <MessageSquare className="absolute right-5 top-5 text-slate-300" size={20} />
+            <textarea 
+              className="w-full bg-slate-50 border border-slate-100 rounded-[2rem] pr-14 pl-6 py-5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 h-40 resize-none transition-all"
+              placeholder="اكتب أي ملاحظات فنية أو تربوية إضافية للمحاضر..."
+              value={formData.notes}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+            />
+          </div>
+        </div>
 
-                       return (
-                         <div key={ev.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group relative overflow-hidden">
-                            {/* Day and Date Badge */}
-                            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-2">
-                               <div className="flex items-center text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
-                                  <Calendar size={10} className="ml-1" />
-                                  اليوم: {dayName}
-                               </div>
-                               <div className="flex items-center text-[9px] font-black text-slate-400">
-                                  <Clock size={10} className="ml-1" />
-                                  التاريخ: {dateStr}
-                               </div>
-                            </div>
-
-                            <div className="flex justify-between items-start mb-3">
-                               <div className="flex items-center space-x-3 space-x-reverse">
-                                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-black text-blue-600 shadow-sm">
-                                     {ev.teacher_name[0]}
-                                  </div>
-                                  <div>
-                                     <h4 className="text-sm font-black text-slate-800">{ev.teacher_name}</h4>
-                                     <div className="flex items-center text-[9px] font-bold text-emerald-600 mt-0.5">
-                                        <GraduationCap size={10} className="ml-1" />
-                                        الطالب: {ev.student_name || ev.class_name}
-                                     </div>
-                                  </div>
-                               </div>
-                               <div className="text-left flex flex-col items-end">
-                                  <span className={`text-lg font-black ${qualityPercent >= 85 ? 'text-emerald-600' : qualityPercent >= 50 ? 'text-amber-500' : 'text-rose-500'}`}>
-                                     {qualityPercent}%
-                                  </span>
-                                  {avg < 5 && (
-                                     <div className="flex items-center text-[8px] font-black text-rose-500 uppercase bg-rose-50 px-1.5 py-0.5 rounded mt-1">
-                                        <AlertTriangle size={8} className="ml-1" />
-                                        إنذار جودة
-                                     </div>
-                                  )}
-                               </div>
-                            </div>
-                            
-                            {ev.notes && (
-                               <p className="text-[9px] font-bold text-slate-400 mt-2 line-clamp-1 italic">
-                                  "{ev.notes}"
-                               </p>
-                            )}
-
-                            <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden mt-3">
-                               <div 
-                                  className={`h-full transition-all duration-1000 ${qualityPercent >= 85 ? 'bg-emerald-500' : qualityPercent >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
-                                  style={{ width: `${qualityPercent}%` }}
-                               ></div>
-                            </div>
-                         </div>
-                       );
-                    })}
-                 </div>
-
-                 <div className="mt-8 pt-6 border-t border-slate-100">
-                    <button 
-                      onClick={() => navigate('/evaluations-list')}
-                      className="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl text-xs font-black hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center shadow-inner"
-                    >
-                       <Eye size={16} className="ml-2" />
-                       فتح السجل التاريخي الكامل
-                    </button>
-                 </div>
-              </div>
-           </div>
-        )}
+        {/* Submit Action */}
+        <div className="pt-8 border-t border-slate-50 flex flex-col md:flex-row items-center gap-4">
+            <button 
+                type="submit"
+                disabled={actionLoading}
+                className="flex-1 w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-lg shadow-2xl flex items-center justify-center transition-all hover:bg-black active:scale-95 disabled:opacity-50"
+            >
+                {actionLoading ? <Loader2 className="animate-spin ml-3" size={24} /> : <CheckCircle2 className="ml-3 text-blue-400" size={24} />}
+                اعتماد وإرسال تقرير الجودة
+            </button>
+            <button 
+              type="button"
+              onClick={() => navigate(-1)}
+              className="px-10 py-6 bg-slate-50 text-slate-400 rounded-[2rem] font-black text-sm hover:bg-slate-100 transition-all"
+            >
+                إلغاء التقييم
+            </button>
+        </div>
+      </form>
+      
+      <div className="text-center">
+         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Quality Assurance Framework • El Centro de Mirar v2.5</p>
       </div>
     </div>
   );
