@@ -1,5 +1,3 @@
-
-// ... existing imports ...
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ClipboardCheck, 
@@ -22,12 +20,15 @@ import {
   Percent,
   PlusCircle,
   Eye,
-  ShieldAlert
+  ShieldAlert,
+  X,
+  ChevronLeft
 } from 'lucide-react';
+// Fixed: Added missing useNavigate import from react-router-dom
+import { useNavigate } from 'react-router-dom';
 import { db, formatAppDate } from '../services/supabase';
 
 const RatingInput = ({ label, value, onChange, icon: Icon }: any) => (
-  // ... (RatingInput logic remains same)
   <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group">
     <div className="flex items-center justify-between mb-4">
       <label className="flex items-center text-sm font-black text-slate-700">
@@ -58,7 +59,8 @@ const RatingInput = ({ label, value, onChange, icon: Icon }: any) => (
 );
 
 const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
-  // ... (State and fetch logic same)
+  // Fixed: Initialized navigate using useNavigate hook
+  const navigate = useNavigate();
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [allEvaluations, setAllEvaluations] = useState<any[]>([]);
@@ -78,7 +80,8 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
   
   const [notes, setNotes] = useState('');
 
-  const isHighLevel = user?.role === 'manager' || user?.role === 'general_supervisor';
+  // تعديل: المشرف والمدير والمشرف العام كلهم لديهم صلاحيات عالية لرؤية التحليلات
+  const isHighLevel = user?.role === 'manager' || user?.role === 'general_supervisor' || user?.role === 'supervisor';
   const isGeneralSupervisor = user?.role === 'general_supervisor';
 
   useEffect(() => {
@@ -100,6 +103,41 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const filteredClasses = useMemo(() => {
+    if (!selectedTeacher) return [];
+    return classes.filter(c => c.teacher === selectedTeacher);
+  }, [classes, selectedTeacher]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTeacher || !selectedClass) {
+      alert('يرجى اختيار المحاضر والحلقة');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await db.classEvaluations.create({
+        teacher_name: selectedTeacher,
+        class_name: selectedClass,
+        evaluator_name: user?.full_name || 'مشرف',
+        ...ratings,
+        notes,
+        created_at: new Date().toISOString()
+      });
+      
+      alert('تم حفظ التقييم بنجاح');
+      setNotes('');
+      setSelectedClass('');
+      setSelectedTeacher('');
+      fetchData();
+    } catch (error) {
+      alert('حدث خطأ أثناء الحفظ');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -133,36 +171,47 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
         qualityPercent: Math.round((s.totalScore / s.evaluationsCount) * 10),
         supervisorsList: Array.from(s.supervisors)
       }))
-      .filter(s => s.name.includes(searchTerm))
+      .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a, b) => b.qualityPercent - a.qualityPercent);
   }, [allEvaluations, isHighLevel, searchTerm]);
+
+  if (loading) return (
+    <div className="h-[60vh] flex flex-col items-center justify-center text-slate-400">
+      <Loader2 className="animate-spin mb-4" size={48} />
+      <p className="font-black text-xs uppercase tracking-widest">جاري مزامنة بيانات الجودة...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 text-right" dir="rtl">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex items-center space-x-3 space-x-reverse">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl shadow-sm">
             <ClipboardCheck size={32} />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-slate-800">تقييم الحصة</h2>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
-              {isGeneralSupervisor ? 'رصد ومتابعة جودة التعليم' : 'نموذج تقييم أداء الحلقات اليومي'}
-            </p>
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight">تقييم جودة الحصص</h2>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">رصد ومتابعة أداء الهيئة التعليمية يومياً</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {!isGeneralSupervisor && (
-          <div className="xl:col-span-7 space-y-6">
-            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 h-full">
-              <h3 className="text-lg font-black text-slate-800 mb-2 flex items-center">
+        {/* Form Section - Shown to all but General Supervisor usually wants to focus on analysis */}
+        <div className="xl:col-span-7 space-y-6">
+          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-8 h-fit">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-800 flex items-center">
                 <PlusCircle size={20} className="ml-2 text-blue-500" />
                 إدخال تقييم جديد
               </h3>
+              <div className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase">
+                {user?.full_name}
+              </div>
+            </div>
 
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
@@ -173,35 +222,70 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
                     value={selectedTeacher}
                     onChange={(e) => { setSelectedTeacher(e.target.value); setSelectedClass(''); }}
+                    required
                   >
                     <option value="">-- اختر المحاضر --</option>
                     {teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
                   </select>
                 </div>
-                {/* ... other form fields ... */}
-              </div>
-            </div>
-          </div>
-        )}
 
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
+                    <BookOpen size={14} className="ml-1 text-emerald-600" />
+                    الحلقة
+                  </label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50"
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    disabled={!selectedTeacher}
+                    required
+                  >
+                    <option value="">-- اختر الحلقة --</option>
+                    {filteredClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <RatingInput label="جودة الإنترنت والاتصال" value={ratings.internet_quality} onChange={(v: any) => setRatings({...ratings, internet_quality: v})} icon={Wifi} />
+                <RatingInput label="التزام المحاضر بفتح الكاميرا" value={ratings.camera_usage} onChange={(v: any) => setRatings({...ratings, camera_usage: v})} icon={Camera} />
+                <RatingInput label="تركيز المحاضر واستيعابه" value={ratings.focus_level} onChange={(v: any) => setRatings({...ratings, focus_level: v})} icon={BrainCircuit} />
+                <RatingInput label="مهارات إدارة الحصة والوقت" value={ratings.management_skills} onChange={(v: any) => setRatings({...ratings, management_skills: v})} icon={Users} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mr-1">ملاحظات المشرف الإضافية</label>
+                <textarea 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-3xl px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none h-32"
+                  placeholder="اكتب أي ملاحظات فنية أو تربوية لاحظتها خلال التقييم..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={submitting}
+                className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl hover:bg-black transition-all flex items-center justify-center active:scale-95 disabled:opacity-50"
+              >
+                {submitting ? <Loader2 className="animate-spin ml-3" size={24} /> : <Save className="ml-3" size={24} />}
+                اعتماد وحفظ تقرير التقييم
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Analysis Sidebar - Now fully accessible to regular supervisors too */}
         {isHighLevel && (
-           <div className={`${isGeneralSupervisor ? 'xl:col-span-12' : 'xl:col-span-5'} space-y-6`}>
+           <div className="xl:col-span-5 space-y-6">
               <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm h-full flex flex-col">
                  <div className="flex items-center justify-between mb-8">
                     <div>
                        <h3 className="text-xl font-black text-slate-800">مؤشرات جودة التعليم</h3>
-                       <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">تراكم تقييمات المشرفين للهيئة التعليمية</p>
+                       <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">تحليل تراكمي لأداء المحاضرين</p>
                     </div>
                  </div>
-
-                 {isGeneralSupervisor && (
-                    <div className="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-start text-blue-700">
-                       <ShieldAlert size={18} className="ml-3 mt-0.5 shrink-0" />
-                       <p className="text-xs font-bold leading-relaxed">
-                          أهلاً بك يا مشرف عام النظم. بصفتك مشرفاً عاماً، تقتصر صلاحياتك في هذه الصفحة على متابعة جودة أداء المحاضرين من خلال تقارير المشرفين المباشرين.
-                       </p>
-                    </div>
-                 )}
 
                  <div className="relative mb-6">
                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
@@ -213,7 +297,53 @@ const ClassEvaluation: React.FC<{ user?: any }> = ({ user }) => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                  </div>
-                 {/* ... (Teacher cards with Lecturer label) ... */}
+
+                 <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                    {teacherAnalysis.length === 0 ? (
+                       <div className="text-center py-20 text-slate-300">
+                          <TrendingUp size={48} className="mx-auto mb-4 opacity-20" />
+                          <p className="text-sm font-bold">لا توجد بيانات تحليلية متاحة</p>
+                       </div>
+                    ) : teacherAnalysis.map((item: any) => (
+                       <div key={item.name} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-blue-200 transition-all group">
+                          <div className="flex justify-between items-start mb-3">
+                             <div className="flex items-center space-x-3 space-x-reverse">
+                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center font-black text-blue-600 shadow-sm">
+                                   {item.name[0]}
+                                </div>
+                                <div>
+                                   <h4 className="text-sm font-black text-slate-800">{item.name}</h4>
+                                   <div className="flex items-center text-[9px] font-bold text-slate-400 mt-0.5">
+                                      <Users size={10} className="ml-1" />
+                                      {item.evaluationsCount} تقييم مسجل
+                                   </div>
+                                </div>
+                             </div>
+                             <div className="text-left">
+                                <span className={`text-lg font-black ${item.qualityPercent >= 85 ? 'text-emerald-600' : 'text-amber-500'}`}>
+                                   {item.qualityPercent}%
+                                </span>
+                             </div>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                             <div 
+                                className={`h-full transition-all duration-1000 ${item.qualityPercent >= 85 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                style={{ width: `${item.qualityPercent}%` }}
+                             ></div>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+
+                 <div className="mt-8 pt-6 border-t border-slate-100">
+                    <button 
+                      onClick={() => navigate('/evaluations-list')}
+                      className="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl text-xs font-black hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center shadow-inner"
+                    >
+                       <Eye size={16} className="ml-2" />
+                       فتح السجل التاريخي الكامل
+                    </button>
+                 </div>
               </div>
            </div>
         )}
