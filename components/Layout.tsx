@@ -82,13 +82,20 @@ const Layout: React.FC<{ children: React.ReactNode, user?: any, onLogout?: () =>
     if (role === 'manager') items.push({ icon: HandCoins, label: 'مستحقات المحاضرين', path: '/staff-earnings' });
     
     if (perms.page_schedule !== false) items.push({ icon: CalendarClock, label: 'جدول المواعيد', path: '/schedule' });
-    if (perms.page_students || role === 'manager') items.push({ icon: Users, label: 'الطلاب', path: '/students' });
+    
+    // تم التعديل هنا: السماح للمحاضر برؤية طلابه بتسمية مخصصة
+    if (perms.page_students || role === 'manager' || role === 'teacher') {
+      items.push({ 
+        icon: Users, 
+        label: role === 'teacher' ? 'طلابي' : 'الطلاب', 
+        path: '/students' 
+      });
+    }
     
     if (perms.page_finance || role === 'manager') items.push({ icon: Calculator, label: 'الحسابات والمالية', path: '/accounts' });
     
     if (perms.page_renewal || role === 'manager') items.push({ icon: RefreshCw, label: 'متابعة التجديدات', path: '/renewal-followup' });
     
-    // تم التعديل هنا: إزالة role === 'manager' لإعطاء التحكم الكامل للصلاحيات
     if (perms.page_attendance) items.push({ icon: CalendarCheck, label: 'حضور المحاضرين', path: '/teacher-attendance' });
     if (perms.page_class_eval) items.push({ icon: ClipboardCheck, label: 'تقييم الحصة', path: '/class-evaluation' });
     if (perms.page_eval_list) items.push({ icon: ClipboardList, label: 'سجل التقييمات', path: '/evaluations-list' });
