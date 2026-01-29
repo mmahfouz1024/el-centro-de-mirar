@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   TrendingUp, 
@@ -51,8 +52,9 @@ const ManagerDashboard: React.FC = () => {
     students: [] as any[],
     profiles: [] as any[],
     salesTeam: [] as any[],
-    expenses: [] as any[],
-    salaries: [] as any[]
+    studentIncome: [] as any[], // تحصيلات الطلاب
+    salaries: [] as any[],     // الرواتب المصروفة
+    otherExpenses: [] as any[] // المصروفات الإدارية
   });
 
   useEffect(() => {
@@ -62,20 +64,22 @@ const ManagerDashboard: React.FC = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [students, profiles, salesTeam, expenses, salaries] = await Promise.all([
+      const [students, profiles, salesTeam, studentIncome, salaries, otherExpenses] = await Promise.all([
         db.students.getAll(),
         db.profiles.getAll(),
         db.salesTeam.getAll(),
         db.finance.studentExpenses.getAll(),
-        db.finance.salaries.getAll()
+        db.finance.salaries.getAll(),
+        db.finance.otherExpenses.getAll()
       ]);
       
       setData({
         students: students || [],
         profiles: profiles || [],
         salesTeam: salesTeam || [],
-        expenses: expenses || [],
-        salaries: salaries || []
+        studentIncome: studentIncome || [],
+        salaries: salaries || [],
+        otherExpenses: otherExpenses || []
       });
     } catch (error) {
       console.error('Error fetching manager dashboard data:', error);
@@ -87,7 +91,7 @@ const ManagerDashboard: React.FC = () => {
   // 1. Staff Stats
   const staffStats = useMemo(() => {
     const teachers = data.profiles.filter(p => p.role === 'teacher').length;
-    const supervisors = data.profiles.filter(p => p.role === 'supervisor').length;
+    const supervisors = data.profiles.filter(p => p.role === 'supervisor' || p.role === 'general_supervisor').length;
     const sales = data.salesTeam.length;
     return { teachers, supervisors, sales };
   }, [data.profiles, data.salesTeam]);
@@ -125,10 +129,10 @@ const ManagerDashboard: React.FC = () => {
     return { topCountries, topLanguages };
   }, [data.students]);
 
-  // 4. Financial Stats
+  // 4. Financial Stats (Actual Data)
   const totalRevenue = useMemo(() => {
-    return data.expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  }, [data.expenses]);
+    return data.studentIncome.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+  }, [data.studentIncome]);
 
   const chartData = useMemo(() => {
     const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -138,25 +142,26 @@ const ManagerDashboard: React.FC = () => {
     for (let i = 5; i >= 0; i--) {
       const monthIdx = (currentMonth - i + 12) % 12;
       const monthName = months[monthIdx];
-      const monthlySum = data.expenses
-        .filter(exp => new Date(exp.date).getMonth() === monthIdx)
-        .reduce((acc, curr) => acc + curr.amount, 0);
+      const monthlySum = data.studentIncome
+        .filter(inc => new Date(inc.date).getMonth() === monthIdx)
+        .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
       
       result.push({ name: monthName, value: monthlySum });
     }
     return result;
-  }, [data.expenses]);
+  }, [data.studentIncome]);
 
   const distributionData = useMemo(() => {
-    const totalSalaries = data.salaries.reduce((acc, curr) => acc + (curr.final_amount || 0), 0);
-    const otherExpenses = totalRevenue * 0.3; // Estimated
+    const totalSalaries = data.salaries.reduce((acc, curr) => acc + (Number(curr.final_amount) || 0), 0);
+    const totalOtherExp = data.otherExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const netProfit = totalRevenue - totalSalaries - totalOtherExp;
     
     return [
-      { name: 'الرواتب', value: totalSalaries, color: '#10b981' }, // Emerald
-      { name: 'تشغيل', value: otherExpenses, color: '#3b82f6' }, // Blue
-      { name: 'أرباح', value: Math.max(0, totalRevenue - totalSalaries - otherExpenses), color: '#f59e0b' } // Amber
+      { name: 'الرواتب المصروفة', value: totalSalaries, color: '#10b981' }, 
+      { name: 'مصروفات إدارية', value: totalOtherExp, color: '#3b82f6' }, 
+      { name: 'صافي الربح المتبقي', value: Math.max(0, netProfit), color: '#f59e0b' }
     ];
-  }, [data.salaries, totalRevenue]);
+  }, [data.salaries, data.otherExpenses, totalRevenue]);
 
   return (
     <div className="space-y-10 pb-20 text-right animate-in fade-in duration-700" dir="rtl">
@@ -183,7 +188,6 @@ const ManagerDashboard: React.FC = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row items-center gap-4">
-             {/* Total Students Block */}
              <div className="bg-white/5 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 text-center min-w-[160px] group-hover:bg-white/10 transition-colors">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">إجمالي الطلاب</p>
                 <h3 className="text-4xl font-black text-white">{studentStats.totalStudents}</h3>
@@ -193,7 +197,6 @@ const ManagerDashboard: React.FC = () => {
                 </div>
              </div>
 
-             {/* Stopped Students Block */}
              <div className="bg-rose-500/10 backdrop-blur-xl p-6 rounded-[2.5rem] border border-rose-500/20 text-center min-w-[160px] group-hover:bg-rose-500/20 transition-colors">
                 <p className="text-[10px] font-black text-rose-300 uppercase tracking-widest mb-1">طلاب متوقفين</p>
                 <h3 className="text-4xl font-black text-rose-400">{studentStats.notRenewing}</h3>
@@ -268,9 +271,8 @@ const ManagerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* New Insights: Countries & Languages */}
+      {/* Insights: Countries & Languages */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         {/* Top Countries Card */}
          <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
             <div className="flex items-center justify-between mb-8">
                <div className="flex items-center gap-3">
@@ -306,7 +308,6 @@ const ManagerDashboard: React.FC = () => {
             </div>
          </div>
 
-         {/* Top Languages Card */}
          <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
             <div className="flex items-center justify-between mb-8">
                <div className="flex items-center gap-3">
@@ -366,7 +367,6 @@ const ManagerDashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                  <AreaChart data={chartData}>
                     <defs>
-                       {/* Fixed duplicate x1 attribute here */}
                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
                           <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
@@ -386,14 +386,14 @@ const ManagerDashboard: React.FC = () => {
            </div>
         </div>
 
-        {/* Distribution Pie Chart */}
+        {/* Distribution Pie Chart - Updated to match system actuals */}
         <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
            <div>
               <div className="flex items-center gap-2 mb-2">
                  <div className="p-2 bg-blue-50 rounded-xl text-blue-600"><PieChartIcon size={20}/></div>
-                 <h3 className="text-xl font-black text-slate-800">توزيع السيولة</h3>
+                 <h3 className="text-xl font-black text-slate-800">توزيع السيولة (بيانات حقيقية)</h3>
               </div>
-              <p className="text-xs font-bold text-slate-400">تحليل المصروفات مقابل الأرباح الصافية.</p>
+              <p className="text-xs font-bold text-slate-400">تحليل المصروفات التشغيلية والرواتب مقابل صافي الربح.</p>
            </div>
 
            <div className="h-64 w-full relative my-4">
@@ -413,11 +413,14 @@ const ManagerDashboard: React.FC = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                        ))}
                     </Pie>
-                    <Tooltip formatter={(val) => `${Number(val).toLocaleString()} ج.م`} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'}} />
+                    <Tooltip 
+                      formatter={(val) => `${Number(val).toLocaleString()} ج.م`} 
+                      contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'}} 
+                    />
                  </PieChart>
               </ResponsiveContainer>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                 <span className="text-[10px] font-black text-slate-400 uppercase">الإجمالي</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase">إجمالي الدخل</span>
                  <p className="text-lg font-black text-slate-800">{totalRevenue.toLocaleString()}</p>
               </div>
            </div>
