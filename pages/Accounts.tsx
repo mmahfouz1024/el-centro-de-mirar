@@ -4,48 +4,27 @@ import {
   Calculator, 
   DollarSign, 
   Wallet, 
-  ShoppingCart, 
-  BookOpen, 
   Plus, 
   Loader2, 
   Check, 
   Trash2, 
   TrendingDown, 
   ArrowUpRight,
-  Package,
-  History,
-  TrendingUp,
-  Tag,
   Coins,
-  RefreshCw,
   ArrowDownCircle,
   ArrowUpCircle,
   TrendingDown as TrendingDownIcon,
   X,
-  Zap,
   Activity,
-  PlusCircle,
-  User,
-  UserPlus,
-  BarChart3,
-  MapPin,
-  Building2,
-  Landmark,
-  Briefcase,
-  Megaphone,
-  Video,
-  PenTool,
   CalendarDays,
   FileText,
-  Calendar,
-  Filter
+  Calendar
 } from 'lucide-react';
-// Correct default import since Salaries now has export default
 import Salaries from './Salaries';
 import StudentExpenses from './StudentExpenses';
 import { db, supabase } from '../services/supabase';
 
-// إضافة مكون OtherExpensesView المفقود لإصلاح الخطأ
+// 1. تعريف المكونات الفرعية أولاً لتجنب خطأ Initialization
 const OtherExpensesView: React.FC<{ onUpdate?: () => void, selectedBranch: string }> = ({ onUpdate, selectedBranch }) => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,6 +165,211 @@ const OtherExpensesView: React.FC<{ onUpdate?: () => void, selectedBranch: strin
   );
 };
 
+const MonthlyReportView = () => {
+  const [selectedDate, setSelectedDate] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
+  });
+  
+  const [data, setData] = useState({
+    income: [] as any[],
+    salaries: [] as any[],
+    expenses: [] as any[],
+    loading: true
+  });
+
+  useEffect(() => {
+    fetchMonthlyData();
+  }, [selectedDate]);
+
+  const fetchMonthlyData = async () => {
+    setData(prev => ({ ...prev, loading: true }));
+    try {
+      const [allIncome, allSalaries, allExpenses] = await Promise.all([
+        db.finance.studentExpenses.getAll(),
+        db.finance.salaries.getAll(),
+        db.finance.otherExpenses.getAll()
+      ]);
+
+      const monthlyIncome = allIncome.filter(item => {
+        const d = new Date(item.date);
+        return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
+      });
+
+      const monthlySalaries = allSalaries.filter(item => {
+        if (item.month && item.year) {
+          return item.month === selectedDate.month && item.year === selectedDate.year;
+        }
+        const d = new Date(item.payment_date || item.created_at);
+        return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
+      });
+
+      const monthlyExpenses = allExpenses.filter(item => {
+        const d = new Date(item.date);
+        return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
+      });
+
+      setData({
+        income: monthlyIncome,
+        salaries: monthlySalaries,
+        expenses: monthlyExpenses,
+        loading: false
+      });
+    } catch (error) {
+      console.error(error);
+      setData(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const stats = useMemo(() => {
+    const totalIncome = data.income.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalTeacherAccounts = data.income.reduce((sum, i) => sum + (Number(i.teacher_ratio) || 0), 0);
+    const adminSalaries = data.salaries
+        .filter(s => s.role !== 'teacher')
+        .reduce((sum, s) => sum + (Number(s.final_amount) || 0), 0);
+    const totalExpenses = data.expenses.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalOut = totalTeacherAccounts + adminSalaries + totalExpenses;
+    const net = totalIncome - totalOut;
+    return { totalIncome, totalTeacherAccounts, adminSalaries, totalExpenses, totalOut, net };
+  }, [data]);
+
+  const months = [
+    { v: 1, l: 'يناير' }, { v: 2, l: 'فبراير' }, { v: 3, l: 'مارس' }, { v: 4, l: 'أبريل' },
+    { v: 5, l: 'مايو' }, { v: 6, l: 'يونيو' }, { v: 7, l: 'يوليو' }, { v: 8, l: 'أغسطس' },
+    { v: 9, l: 'سبتمبر' }, { v: 10, l: 'أكتوبر' }, { v: 11, l: 'نوفمبر' }, { v: 12, l: 'ديسمبر' }
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+         <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+               <Calendar size={24} />
+            </div>
+            <div>
+               <h3 className="text-lg font-black text-slate-800">تحديد الفترة المالية</h3>
+               <p className="text-[10px] font-bold text-slate-400">اختر الشهر والسنة لعرض التقرير</p>
+            </div>
+         </div>
+         <div className="flex items-center gap-3 w-full md:w-auto">
+            <select className="bg-slate-50 border border-slate-100 text-slate-700 font-black text-sm rounded-xl px-4 py-3 outline-none cursor-pointer w-full md:w-40" value={selectedDate.month} onChange={(e) => setSelectedDate({ ...selectedDate, month: parseInt(e.target.value) })}>
+               {months.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
+            </select>
+            <select className="bg-slate-50 border border-slate-100 text-slate-700 font-black text-sm rounded-xl px-4 py-3 outline-none cursor-pointer w-full md:w-32" value={selectedDate.year} onChange={(e) => setSelectedDate({ ...selectedDate, year: parseInt(e.target.value) })}>
+               {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+         </div>
+      </div>
+
+      {data.loading ? (
+         <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-300" size={48} /></div>
+      ) : (
+         <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group">
+                  <div className="relative z-10">
+                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">إجمالي الإيرادات</p>
+                     <h4 className="text-3xl font-black text-emerald-700">{stats.totalIncome.toLocaleString()} <span className="text-sm">ج.م</span></h4>
+                  </div>
+                  <ArrowUpCircle className="absolute -bottom-4 -left-4 text-emerald-200 opacity-50 group-hover:scale-110 transition-transform" size={100} />
+               </div>
+               <div className="bg-rose-50 p-8 rounded-[2.5rem] border border-rose-100 relative overflow-hidden group">
+                  <div className="relative z-10">
+                     <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">إجمالي المصروفات (الصافي)</p>
+                     <h4 className="text-3xl font-black text-rose-700">{stats.totalOut.toLocaleString()} <span className="text-sm">ج.م</span></h4>
+                     <p className="text-[9px] font-bold text-rose-400 mt-1">(محاضرين: {stats.totalTeacherAccounts.toLocaleString()} + إداري: {stats.adminSalaries.toLocaleString()} + تشغيل: {stats.totalExpenses.toLocaleString()})</p>
+                  </div>
+                  <ArrowDownCircle className="absolute -bottom-4 -left-4 text-rose-200 opacity-50 group-hover:scale-110 transition-transform" size={100} />
+               </div>
+               <div className={`p-8 rounded-[2.5rem] border relative overflow-hidden group ${stats.net >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="relative z-10">
+                     <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${stats.net >= 0 ? 'text-blue-600' : 'text-slate-500'}`}>صافي الدخل الشهري</p>
+                     <h4 className={`text-3xl font-black ${stats.net >= 0 ? 'text-blue-700' : 'text-slate-700'}`}>{stats.net.toLocaleString()} <span className="text-sm">ج.م</span></h4>
+                  </div>
+                  <Activity className={`absolute -bottom-4 -left-4 opacity-20 group-hover:scale-110 transition-transform ${stats.net >= 0 ? 'text-blue-300' : 'text-slate-300'}`} size={100} />
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[500px]">
+                  <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-emerald-50/30">
+                     <h3 className="font-black text-emerald-800 flex items-center"><ArrowUpRight size={18} className="ml-2"/> تفاصيل الإيرادات</h3>
+                     <span className="text-[10px] font-bold bg-white px-3 py-1 rounded-full border border-slate-100">{data.income.length} عملية</span>
+                  </div>
+                  <div className="overflow-y-auto flex-1 custom-scrollbar">
+                     <table className="w-full text-right">
+                        <thead className="bg-slate-50 sticky top-0">
+                           <tr>
+                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">البند / الطالب</th>
+                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">التاريخ</th>
+                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase text-center">المبلغ</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                           {data.income.length === 0 ? (
+                              <tr><td colSpan={3} className="p-8 text-center text-slate-300 font-bold">لا توجد إيرادات هذا الشهر</td></tr>
+                           ) : data.income.map((item, i) => (
+                              <tr key={i} className="hover:bg-slate-50/50">
+                                 <td className="p-4 text-xs font-black text-slate-700">{item.student_name}</td>
+                                 <td className="p-4 text-[10px] font-bold text-slate-400">{new Date(item.date).toLocaleDateString('ar-EG')}</td>
+                                 <td className="p-4 text-xs font-black text-emerald-600 text-center">+{Number(item.amount).toLocaleString()}</td>
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[500px]">
+                  <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-rose-50/30">
+                     <h3 className="font-black text-rose-800 flex items-center"><TrendingDown size={18} className="ml-2"/> تفاصيل المصروفات</h3>
+                     <span className="text-[10px] font-bold bg-white px-3 py-1 rounded-full border border-slate-100">{data.expenses.length + (stats.totalTeacherAccounts > 0 ? 1 : 0) + data.salaries.filter(s => s.role !== 'teacher').length} عملية</span>
+                  </div>
+                  <div className="overflow-y-auto flex-1 custom-scrollbar">
+                     <table className="w-full text-right">
+                        <thead className="bg-slate-50 sticky top-0">
+                           <tr>
+                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">البند</th>
+                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">النوع</th>
+                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase text-center">المبلغ</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                           {stats.totalTeacherAccounts > 0 && (
+                              <tr className="hover:bg-slate-50/50 bg-rose-50/20">
+                                 <td className="p-4 text-xs font-black text-slate-800">مستحقات المحاضرين (حساب النسب)</td>
+                                 <td className="p-4 text-[10px] font-bold text-slate-400">حساب محاضرين</td>
+                                 <td className="p-4 text-xs font-black text-rose-600 text-center">-{stats.totalTeacherAccounts.toLocaleString()}</td>
+                              </tr>
+                           )}
+                           {data.salaries.filter(s => s.role !== 'teacher').map((sal, i) => (
+                              <tr key={`adm-sal-${i}`} className="hover:bg-slate-50/50 bg-purple-50/20">
+                                 <td className="p-4 text-xs font-black text-slate-700">{sal.employee_name}</td>
+                                 <td className="p-4 text-[10px] font-bold text-slate-400">راتب إداري ({sal.role === 'supervisor' ? 'مشرف' : sal.role === 'sales' ? 'مبيعات' : 'إداري'})</td>
+                                 <td className="p-4 text-xs font-black text-rose-600 text-center">-{Number(sal.final_amount).toLocaleString()}</td>
+                              </tr>
+                           ))}
+                           {data.expenses.map((exp, i) => (
+                              <tr key={`exp-${i}`} className="hover:bg-slate-50/50">
+                                 <td className="p-4 text-xs font-black text-slate-700">{exp.description}</td>
+                                 <td className="p-4 text-[10px] font-bold text-slate-400">{exp.category}</td>
+                                 <td className="p-4 text-xs font-black text-rose-600 text-center">-{Number(exp.amount).toLocaleString()}</td>
+                              </tr>
+                           ))}
+                           {stats.totalTeacherAccounts === 0 && stats.adminSalaries === 0 && data.expenses.length === 0 && (
+                              <tr><td colSpan={3} className="p-8 text-center text-slate-300 font-bold">لا توجد مصروفات هذا الشهر</td></tr>
+                           )}
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+            </div>
+         </>
+      )}
+    </div>
+  );
+};
+
+// 2. المكون الرئيسي يأتي في النهاية
 const Accounts: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'salaries' | 'students' | 'expenses' | 'monthly_report'>('monthly_report');
   const [vaultData, setVaultData] = useState({
@@ -203,15 +387,11 @@ const Accounts: React.FC = () => {
         db.finance.salaries.getAll(),
         db.finance.otherExpenses.getAll()
       ]);
-
       const stdIncome = stdExp.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
       const totalIn = stdIncome;
-
       const salariesOut = salaries.reduce((sum, item) => sum + (Number(item.final_amount) || 0), 0);
       const otherOut = otherExp.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      
       const totalOut = salariesOut + otherOut;
-
       setVaultData({
         balance: totalIn - totalOut,
         totalIncome: totalIn,
@@ -233,10 +413,7 @@ const Accounts: React.FC = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'salaries' }, () => calculateVault())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'other_expenses' }, () => calculateVault())
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [calculateVault]);
 
   return (
@@ -295,253 +472,6 @@ const Accounts: React.FC = () => {
         {activeTab === 'students' && <StudentExpenses onUpdate={calculateVault} selectedBranch="الكل" />}
         {activeTab === 'expenses' && <OtherExpensesView onUpdate={calculateVault} selectedBranch="الكل" />}
       </div>
-    </div>
-  );
-};
-
-const MonthlyReportView = () => {
-  const [selectedDate, setSelectedDate] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
-  });
-  
-  const [data, setData] = useState({
-    income: [] as any[],
-    salaries: [] as any[],
-    expenses: [] as any[],
-    loading: true
-  });
-
-  useEffect(() => {
-    fetchMonthlyData();
-  }, [selectedDate]);
-
-  const fetchMonthlyData = async () => {
-    setData(prev => ({ ...prev, loading: true }));
-    try {
-      const [allIncome, allSalaries, allExpenses] = await Promise.all([
-        db.finance.studentExpenses.getAll(),
-        db.finance.salaries.getAll(),
-        db.finance.otherExpenses.getAll()
-      ]);
-
-      // فلترة الإيرادات حسب التاريخ
-      const monthlyIncome = allIncome.filter(item => {
-        const d = new Date(item.date);
-        return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
-      });
-
-      // فلترة الرواتب (سنستخدم فقط رواتب غير المعلمين في الحساب)
-      const monthlySalaries = allSalaries.filter(item => {
-        if (item.month && item.year) {
-          return item.month === selectedDate.month && item.year === selectedDate.year;
-        }
-        const d = new Date(item.payment_date || item.created_at);
-        return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
-      });
-
-      // فلترة المصروفات الإدارية
-      const monthlyExpenses = allExpenses.filter(item => {
-        const d = new Date(item.date);
-        return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
-      });
-
-      setData({
-        income: monthlyIncome,
-        salaries: monthlySalaries,
-        expenses: monthlyExpenses,
-        loading: false
-      });
-
-    } catch (error) {
-      console.error(error);
-      setData(prev => ({ ...prev, loading: false }));
-    }
-  };
-
-  const stats = useMemo(() => {
-    // إجمالي الدخل من الاشتراكات
-    const totalIncome = data.income.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-    
-    // 1. حساب "حساب المحاضرين" وهو نسب المحاضرين من الاشتراكات (وليس الرواتب المصروفة)
-    const totalTeacherAccounts = data.income.reduce((sum, i) => sum + (Number(i.teacher_ratio) || 0), 0);
-    
-    // 2. حساب الرواتب الإدارية (أي راتب لشخص دوره ليس "teacher")
-    const adminSalaries = data.salaries
-        .filter(s => s.role !== 'teacher')
-        .reduce((sum, s) => sum + (Number(s.final_amount) || 0), 0);
-
-    // 3. المصروفات الإدارية الأخرى
-    const totalExpenses = data.expenses.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-    
-    // إجمالي المصروفات (حساب المحاضرين + رواتب إدارية + مصروفات تشغيل)
-    const totalOut = totalTeacherAccounts + adminSalaries + totalExpenses;
-    
-    // صافي الدخل
-    const net = totalIncome - totalOut;
-
-    return { totalIncome, totalTeacherAccounts, adminSalaries, totalExpenses, totalOut, net };
-  }, [data]);
-
-  const months = [
-    { v: 1, l: 'يناير' }, { v: 2, l: 'فبراير' }, { v: 3, l: 'مارس' }, { v: 4, l: 'أبريل' },
-    { v: 5, l: 'مايو' }, { v: 6, l: 'يونيو' }, { v: 7, l: 'يوليو' }, { v: 8, l: 'أغسطس' },
-    { v: 9, l: 'سبتمبر' }, { v: 10, l: 'أكتوبر' }, { v: 11, l: 'نوفمبر' }, { v: 12, l: 'ديسمبر' }
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Date Selector */}
-      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-         <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-               <Calendar size={24} />
-            </div>
-            <div>
-               <h3 className="text-lg font-black text-slate-800">تحديد الفترة المالية</h3>
-               <p className="text-[10px] font-bold text-slate-400">اختر الشهر والسنة لعرض التقرير</p>
-            </div>
-         </div>
-         
-         <div className="flex items-center gap-3 w-full md:w-auto">
-            <select 
-              className="bg-slate-50 border border-slate-100 text-slate-700 font-black text-sm rounded-xl px-4 py-3 outline-none cursor-pointer w-full md:w-40"
-              value={selectedDate.month}
-              onChange={(e) => setSelectedDate({ ...selectedDate, month: parseInt(e.target.value) })}
-            >
-               {months.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
-            </select>
-            <select 
-              className="bg-slate-50 border border-slate-100 text-slate-700 font-black text-sm rounded-xl px-4 py-3 outline-none cursor-pointer w-full md:w-32"
-              value={selectedDate.year}
-              onChange={(e) => setSelectedDate({ ...selectedDate, year: parseInt(e.target.value) })}
-            >
-               {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-         </div>
-      </div>
-
-      {data.loading ? (
-         <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-300" size={48} /></div>
-      ) : (
-         <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group">
-                  <div className="relative z-10">
-                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">إجمالي الإيرادات</p>
-                     <h4 className="text-3xl font-black text-emerald-700">{stats.totalIncome.toLocaleString()} <span className="text-sm">ج.م</span></h4>
-                  </div>
-                  <ArrowUpCircle className="absolute -bottom-4 -left-4 text-emerald-200 opacity-50 group-hover:scale-110 transition-transform" size={100} />
-               </div>
-
-               <div className="bg-rose-50 p-8 rounded-[2.5rem] border border-rose-100 relative overflow-hidden group">
-                  <div className="relative z-10">
-                     <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">إجمالي المصروفات (الصافي)</p>
-                     <h4 className="text-3xl font-black text-rose-700">{stats.totalOut.toLocaleString()} <span className="text-sm">ج.م</span></h4>
-                     <p className="text-[9px] font-bold text-rose-400 mt-1">
-                        (محاضرين: {stats.totalTeacherAccounts.toLocaleString()} + إداري: {stats.adminSalaries.toLocaleString()} + تشغيل: {stats.totalExpenses.toLocaleString()})
-                     </p>
-                  </div>
-                  <ArrowDownCircle className="absolute -bottom-4 -left-4 text-rose-200 opacity-50 group-hover:scale-110 transition-transform" size={100} />
-               </div>
-
-               <div className={`p-8 rounded-[2.5rem] border relative overflow-hidden group ${stats.net >= 0 ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className="relative z-10">
-                     <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${stats.net >= 0 ? 'text-blue-600' : 'text-slate-500'}`}>صافي الدخل الشهري</p>
-                     <h4 className={`text-3xl font-black ${stats.net >= 0 ? 'text-blue-700' : 'text-slate-700'}`}>{stats.net.toLocaleString()} <span className="text-sm">ج.م</span></h4>
-                  </div>
-                  <Activity className={`absolute -bottom-4 -left-4 opacity-20 group-hover:scale-110 transition-transform ${stats.net >= 0 ? 'text-blue-300' : 'text-slate-300'}`} size={100} />
-               </div>
-            </div>
-
-            {/* Detailed Tables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-               {/* Income Table */}
-               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[500px]">
-                  <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-emerald-50/30">
-                     <h3 className="font-black text-emerald-800 flex items-center"><ArrowUpRight size={18} className="ml-2"/> تفاصيل الإيرادات</h3>
-                     <span className="text-[10px] font-bold bg-white px-3 py-1 rounded-full border border-slate-100">{data.income.length} عملية</span>
-                  </div>
-                  <div className="overflow-y-auto flex-1 custom-scrollbar">
-                     <table className="w-full text-right">
-                        <thead className="bg-slate-50 sticky top-0">
-                           <tr>
-                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">البند / الطالب</th>
-                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">التاريخ</th>
-                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase text-center">المبلغ</th>
-                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                           {data.income.length === 0 ? (
-                              <tr><td colSpan={3} className="p-8 text-center text-slate-300 font-bold">لا توجد إيرادات هذا الشهر</td></tr>
-                           ) : data.income.map((item, i) => (
-                              <tr key={i} className="hover:bg-slate-50/50">
-                                 <td className="p-4 text-xs font-black text-slate-700">{item.student_name}</td>
-                                 <td className="p-4 text-[10px] font-bold text-slate-400">{new Date(item.date).toLocaleDateString('ar-EG')}</td>
-                                 <td className="p-4 text-xs font-black text-emerald-600 text-center">+{Number(item.amount).toLocaleString()}</td>
-                              </tr>
-                           ))}
-                        </tbody>
-                     </table>
-                  </div>
-               </div>
-
-               {/* Expense Table */}
-               <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-[500px]">
-                  <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-rose-50/30">
-                     <h3 className="font-black text-rose-800 flex items-center"><TrendingDown size={18} className="ml-2"/> تفاصيل المصروفات</h3>
-                     <span className="text-[10px] font-bold bg-white px-3 py-1 rounded-full border border-slate-100">
-                        {data.expenses.length + (stats.totalTeacherAccounts > 0 ? 1 : 0) + data.salaries.filter(s => s.role !== 'teacher').length} عملية
-                     </span>
-                  </div>
-                  <div className="overflow-y-auto flex-1 custom-scrollbar">
-                     <table className="w-full text-right">
-                        <thead className="bg-slate-50 sticky top-0">
-                           <tr>
-                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">البند</th>
-                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase">النوع</th>
-                              <th className="p-4 text-[9px] font-black text-slate-400 uppercase text-center">المبلغ</th>
-                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                           {/* Teacher Accounts Aggregate */}
-                           {stats.totalTeacherAccounts > 0 && (
-                              <tr className="hover:bg-slate-50/50 bg-rose-50/20">
-                                 <td className="p-4 text-xs font-black text-slate-800">مستحقات المحاضرين (حساب النسب)</td>
-                                 <td className="p-4 text-[10px] font-bold text-slate-400">حساب محاضرين</td>
-                                 <td className="p-4 text-xs font-black text-rose-600 text-center">-{stats.totalTeacherAccounts.toLocaleString()}</td>
-                              </tr>
-                           )}
-
-                           {/* Administrative Salaries */}
-                           {data.salaries.filter(s => s.role !== 'teacher').map((sal, i) => (
-                              <tr key={`adm-sal-${i}`} className="hover:bg-slate-50/50 bg-purple-50/20">
-                                 <td className="p-4 text-xs font-black text-slate-700">{sal.employee_name}</td>
-                                 <td className="p-4 text-[10px] font-bold text-slate-400">راتب إداري ({sal.role === 'supervisor' ? 'مشرف' : sal.role === 'sales' ? 'مبيعات' : 'إداري'})</td>
-                                 <td className="p-4 text-xs font-black text-rose-600 text-center">-{Number(sal.final_amount).toLocaleString()}</td>
-                              </tr>
-                           ))}
-                           
-                           {/* Other Expenses */}
-                           {data.expenses.map((exp, i) => (
-                              <tr key={`exp-${i}`} className="hover:bg-slate-50/50">
-                                 <td className="p-4 text-xs font-black text-slate-700">{exp.description}</td>
-                                 <td className="p-4 text-[10px] font-bold text-slate-400">{exp.category}</td>
-                                 <td className="p-4 text-xs font-black text-rose-600 text-center">-{Number(exp.amount).toLocaleString()}</td>
-                              </tr>
-                           ))}
-                           
-                           {stats.totalTeacherAccounts === 0 && stats.adminSalaries === 0 && data.expenses.length === 0 && (
-                              <tr><td colSpan={3} className="p-8 text-center text-slate-300 font-bold">لا توجد مصروفات هذا الشهر</td></tr>
-                           )}
-                        </tbody>
-                     </table>
-                  </div>
-               </div>
-            </div>
-         </>
-      )}
     </div>
   );
 };
