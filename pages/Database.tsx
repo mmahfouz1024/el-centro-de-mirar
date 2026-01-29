@@ -17,29 +17,26 @@ import {
   FileCode, 
   Terminal,
   Code,
-  Copy
+  Copy,
+  Headphones,
+  Wallet
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
-import { performAutoBackup } from '../services/backupService';
 
 const TABLES_TO_BACKUP = [
   'profiles', 'students', 'halagas', 'centers', 'student_expenses',
   'salaries', 'other_expenses', 'book_inventory', 'testimonials',
   'experts', 'subscriptions', 'videos', 'attendance_records',
-  'teacher_attendance', 'student_tracking_logs', 'external_revenues'
+  'teacher_attendance', 'student_tracking_logs', 'external_revenues',
+  'sales_employees'
 ];
 
 const RECREATE_STUDENTS_SQL = `-- كود إصلاح شامل لجدول الطلاب وإضافة الأعمدة الناقصة
--- انسخ هذا الكود بالكامل وشغله في Supabase SQL Editor
-
--- 1. التأكد من وجود الجدول والأعمدة الأساسية
 CREATE TABLE IF NOT EXISTS public.students (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
--- 2. إضافة الأعمدة التي قد تكون ناقصة (باستخدام IF NOT EXISTS لتجنب الأخطاء)
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS name TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS student_number TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS age INTEGER;
@@ -52,25 +49,71 @@ ALTER TABLE public.students ADD COLUMN IF NOT EXISTS enrollment_programs TEXT[];
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS teacher_name TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS supervisor_name TEXT;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS paid_amount NUMERIC DEFAULT 0;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'جنيه مصري';
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS renewal_status TEXT DEFAULT 'undecided';
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS last_hifz_date TIMESTAMPTZ;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT 'الرئيسي';
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS required_sessions_count INTEGER DEFAULT 1;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS preferred_schedule JSONB DEFAULT '{}'::jsonb;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS admission_result TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS interview_notes TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS recitation_level TEXT;
-ALTER TABLE public.students ADD COLUMN IF NOT EXISTS memorization_status TEXT;
 
--- 3. تفعيل الوصول العام (أو حسب رغبتك في الأمان)
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public Access" ON public.students;
 CREATE POLICY "Public Access" ON public.students FOR ALL USING (true) WITH CHECK (true);
-
--- 4. منح الصلاحيات
 GRANT ALL ON TABLE public.students TO anon, authenticated, service_role;
+`;
+
+const RECREATE_SALES_SQL = `-- كود إنشاء وإصلاح جدول فريق المبيعات (sales_employees)
+CREATE TABLE IF NOT EXISTS public.sales_employees (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    full_name TEXT NOT NULL,
+    private_phone TEXT,
+    academy_whatsapp TEXT,
+    vodafone_cash TEXT,
+    instapay TEXT,
+    notes TEXT,
+    base_salary NUMERIC DEFAULT 0
+);
+ALTER TABLE public.sales_employees ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Access Sales" ON public.sales_employees;
+CREATE POLICY "Public Access Sales" ON public.sales_employees FOR ALL USING (true) WITH CHECK (true);
+GRANT ALL ON TABLE public.sales_employees TO anon, authenticated, service_role;
+`;
+
+const FIX_EXPENSES_SQL = `-- كود إصلاح جدول اشتراكات الطلاب (student_expenses)
+CREATE TABLE IF NOT EXISTS public.student_expenses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    student_name TEXT NOT NULL,
+    amount NUMERIC NOT NULL,
+    category TEXT DEFAULT 'رسوم دراسية',
+    notes TEXT,
+    payment_method TEXT DEFAULT 'نقدي (كاش)',
+    branch TEXT DEFAULT 'الرئيسي',
+    date TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- إضافة الأعمدة المالية المتقدمة في حالة عدم وجودها
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS subscription_type TEXT;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS course_type TEXT;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS assigned_member TEXT;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS teacher_ratio NUMERIC DEFAULT 0;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS payment_type TEXT DEFAULT 'full';
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS amount_paid NUMERIC DEFAULT 0;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS amount_remaining NUMERIC DEFAULT 0;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS installments_count INTEGER DEFAULT 1;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS installment_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS teacher_amount_paid NUMERIC DEFAULT 0;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS teacher_amount_remaining NUMERIC DEFAULT 0;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS teacher_installments_count INTEGER DEFAULT 1;
+ALTER TABLE public.student_expenses ADD COLUMN IF NOT EXISTS teacher_installment_amount NUMERIC DEFAULT 0;
+
+-- تفعيل الحماية والوصول العام
+ALTER TABLE public.student_expenses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Access Expenses" ON public.student_expenses;
+CREATE POLICY "Public Access Expenses" ON public.student_expenses FOR ALL USING (true) WITH CHECK (true);
+
+-- منح الصلاحيات
+GRANT ALL ON TABLE public.student_expenses TO anon, authenticated, service_role;
+NOTIFY pgrst, 'reload schema';
 `;
 
 const TEACHERS_UPDATE_SQL = `-- كود تحديث جدول المعلمين والحسابات (profiles)
@@ -82,7 +125,6 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS vodafone_cash TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS instapay TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS specialization TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT 'الرئيسي';
-
 GRANT ALL ON TABLE public.profiles TO authenticated, service_role;
 `;
 
@@ -91,8 +133,7 @@ const DatabasePage: React.FC<{ user?: any }> = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [actionStatus, setActionStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
   
-  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
-  const [isTeacherSqlModalOpen, setIsTeacherSqlModalOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<'students' | 'teachers' | 'sales' | 'expenses' | null>(null);
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState<Record<string, number>>({});
 
@@ -148,20 +189,27 @@ const DatabasePage: React.FC<{ user?: any }> = ({ user }) => {
           </h2>
           <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">التحكم المركزي والسكربتات التصحيحية</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
            <button 
-             onClick={() => setIsTeacherSqlModalOpen(true)}
+             onClick={() => setActiveModal('expenses')}
+             className="flex items-center space-x-2 space-x-reverse bg-emerald-600 text-white px-4 py-2 rounded-2xl hover:bg-emerald-700 transition-all shadow-lg"
+           >
+             <Wallet className="ml-2" size={18} />
+             <span className="text-[10px] font-black uppercase">إصلاح جدول الاشتراكات</span>
+           </button>
+           <button 
+             onClick={() => setActiveModal('sales')}
+             className="flex items-center space-x-2 space-x-reverse bg-purple-600 text-white px-4 py-2 rounded-2xl hover:bg-purple-700 transition-all shadow-lg"
+           >
+             <Headphones className="ml-2" size={18} />
+             <span className="text-[10px] font-black uppercase">إصلاح جدول المبيعات</span>
+           </button>
+           <button 
+             onClick={() => setActiveModal('teachers')}
              className="flex items-center space-x-2 space-x-reverse bg-blue-600 text-white px-4 py-2 rounded-2xl hover:bg-blue-700 transition-all shadow-lg"
            >
              <Terminal className="ml-2" size={18} />
-             <span className="text-[10px] font-black uppercase">كود تحديث المعلمين</span>
-           </button>
-           <button 
-             onClick={() => setIsSqlModalOpen(true)}
-             className="flex items-center space-x-2 space-x-reverse bg-slate-900 text-white px-4 py-2 rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
-           >
-             <Code className="ml-2" size={18} />
-             <span className="text-[10px] font-black uppercase">كود إصلاح الطلاب</span>
+             <span className="text-[10px] font-black uppercase">تحديث المعلمين</span>
            </button>
         </div>
       </div>
@@ -192,46 +240,53 @@ const DatabasePage: React.FC<{ user?: any }> = ({ user }) => {
            <div className="grid grid-cols-2 gap-4">
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                  <span className="text-[10px] font-black text-slate-400 uppercase">الطلاب</span>
-                 <p className="text-xl font-black text-slate-800">{stats['students']}</p>
+                 <p className="text-xl font-black text-slate-800">{stats['students'] || 0}</p>
               </div>
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                 <span className="text-[10px] font-black text-slate-400 uppercase">الحلقات</span>
-                 <p className="text-xl font-black text-slate-800">{stats['halagas']}</p>
+                 <span className="text-[10px] font-black text-slate-400 uppercase">الاشتراكات</span>
+                 <p className="text-xl font-black text-slate-800">{stats['student_expenses'] || 0}</p>
               </div>
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                  <span className="text-[10px] font-black text-slate-400 uppercase">المستخدمين</span>
-                 <p className="text-xl font-black text-slate-800">{stats['profiles']}</p>
+                 <p className="text-xl font-black text-slate-800">{stats['profiles'] || 0}</p>
               </div>
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                 <span className="text-[10px] font-black text-slate-400 uppercase">القيود المالية</span>
-                 <p className="text-xl font-black text-slate-800">{stats['student_expenses']}</p>
+                 <span className="text-[10px] font-black text-slate-400 uppercase">سجل الرواتب</span>
+                 <p className="text-xl font-black text-slate-800">{stats['salaries'] || 0}</p>
               </div>
            </div>
         </div>
       </div>
 
-      {/* SQL Script Modals */}
-      {(isSqlModalOpen || isTeacherSqlModalOpen) && (
+      {activeModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => {setIsSqlModalOpen(false); setIsTeacherSqlModalOpen(false);}}></div>
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setActiveModal(null)}></div>
           <div className="relative w-full max-w-3xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
             <div className="p-8 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-white/10 rounded-2xl text-amber-400"><Terminal size={24} /></div>
                 <div>
-                  <h3 className="text-xl font-black">{isSqlModalOpen ? 'كود إصلاح جدول الطلاب' : 'كود تحديث جدول المعلمين'}</h3>
+                  <h3 className="text-xl font-black">
+                    {activeModal === 'students' ? 'كود إصلاح جدول الطلاب' : 
+                     activeModal === 'teachers' ? 'كود تحديث جدول المعلمين' : 
+                     activeModal === 'expenses' ? 'كود إصلاح جدول الاشتراكات' :
+                     'كود إنشاء جدول المبيعات'}
+                  </h3>
                   <p className="text-xs text-slate-400 mt-1">انسخ الكود وشغله في Supabase SQL Editor</p>
                 </div>
               </div>
-              <button onClick={() => {setIsSqlModalOpen(false); setIsTeacherSqlModalOpen(false);}} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
+              <button onClick={() => setActiveModal(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><X size={24}/></button>
             </div>
             <div className="p-8">
               <div className="relative">
                 <pre className="bg-slate-50 p-6 rounded-3xl text-left font-mono text-[11px] overflow-x-auto max-h-[400px] border border-slate-100 custom-scrollbar text-slate-600" dir="ltr">
-                  {isSqlModalOpen ? RECREATE_STUDENTS_SQL : TEACHERS_UPDATE_SQL}
+                  {activeModal === 'students' ? RECREATE_STUDENTS_SQL : 
+                   activeModal === 'teachers' ? TEACHERS_UPDATE_SQL : 
+                   activeModal === 'expenses' ? FIX_EXPENSES_SQL :
+                   RECREATE_SALES_SQL}
                 </pre>
                 <button 
-                  onClick={() => handleCopySQL(isSqlModalOpen ? RECREATE_STUDENTS_SQL : TEACHERS_UPDATE_SQL)}
+                  onClick={() => handleCopySQL(activeModal === 'students' ? RECREATE_STUDENTS_SQL : activeModal === 'teachers' ? TEACHERS_UPDATE_SQL : activeModal === 'expenses' ? FIX_EXPENSES_SQL : RECREATE_SALES_SQL)}
                   className={`absolute top-4 right-4 px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
                     copied ? 'bg-emerald-500 text-white' : 'bg-white text-slate-900 shadow-lg border border-slate-100'
                   }`}
@@ -243,7 +298,7 @@ const DatabasePage: React.FC<{ user?: any }> = ({ user }) => {
               <div className="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
                  <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
                  <p className="text-xs font-bold text-amber-800 leading-relaxed">
-                   ملاحظة: استخدام هذا الكود يضيف الأعمدة الناقصة فقط ولا يحذف أي بيانات موجودة مسبقاً. تأكد من عمل نسخة احتياطية قبل أي تغيير هيكلي.
+                   ملاحظة هامة: هذا الكود يقوم بتهيئة الجدول وتفعيل سياسات الأمان (RLS) لضمان قدرة التطبيق على الحفظ والقراءة دون أخطاء.
                  </p>
               </div>
             </div>

@@ -12,7 +12,8 @@ import {
   User, 
   Headphones, 
   ShieldCheck, 
-  Coins
+  Coins,
+  AlertTriangle
 } from 'lucide-react';
 import { db } from '../services/supabase';
 
@@ -32,8 +33,8 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Form State Updated
   const [formData, setFormData] = useState({
     student_name: '',
     subscription_type: 'new', 
@@ -58,7 +59,6 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
     fetchData();
   }, []);
 
-  // الحسابات الآلية للمبالغ المتبقية والأقساط
   useEffect(() => {
     if (formData.payment_type === 'partial') {
       const total = parseFloat(formData.amount) || 0;
@@ -101,8 +101,9 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     if (!formData.student_name || !formData.amount) {
-      alert('يرجى إدخال اسم الطالب والمبلغ');
+      setErrorMessage('يرجى إدخال اسم الطالب والمبلغ الإجمالي');
       return;
     }
     
@@ -114,21 +115,21 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
         category: 'رسوم دراسية',
         notes: formData.notes,
         payment_method: formData.payment_method,
-        branch: 'الرئيسي', // Default branch as it was removed from UI
+        branch: 'الرئيسي',
         date: new Date().toISOString(),
         subscription_type: formData.subscription_type === 'new' ? 'طالب جديد' : 'طالب قديم',
         course_type: formData.course_type,
         assigned_member: formData.assigned_member,
         teacher_ratio: parseFloat(formData.teacher_ratio) || 0,
         payment_type: formData.payment_type,
-        amount_paid: parseFloat(formData.amount_paid) || 0,
+        amount_paid: parseFloat(formData.amount_paid || formData.amount) || 0,
         amount_remaining: formData.amount_remaining,
         installments_count: parseInt(formData.installments_count) || 1,
         installment_amount: formData.installment_amount,
         teacher_amount_paid: parseFloat(formData.teacher_amount_paid) || 0,
         teacher_amount_remaining: formData.teacher_amount_remaining,
         teacher_installments_count: parseInt(formData.teacher_installments_count) || 1,
-        teacher_installment_amount: parseFloat(formData.teacher_installment_amount) || 0
+        teacher_installment_amount: parseFloat(formData.teacher_installment_amount || '0') || 0
       };
 
       await db.finance.studentExpenses.create(payload);
@@ -137,8 +138,9 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
       onUpdate?.();
       setIsModalOpen(false);
       resetForm();
-    } catch (err) {
-      alert('حدث خطأ أثناء الحفظ');
+    } catch (err: any) {
+      console.error("Save Error:", err);
+      setErrorMessage(err.message || 'حدث خطأ أثناء الحفظ. تأكد من تهيئة الجدول في قاعدة البيانات.');
     } finally {
       setActionLoading(false);
     }
@@ -164,6 +166,7 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
       notes: '',
       payment_method: 'نقدي (كاش)'
     });
+    setErrorMessage(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -308,8 +311,13 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
              </div>
 
              <form onSubmit={handleSubmit} className="space-y-8">
-                
-                {/* 1. اسم الطالب */}
+                {errorMessage && (
+                  <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-start gap-3 text-rose-600 animate-shake">
+                    <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                    <p className="text-xs font-black">{errorMessage}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-4">
                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">اسم الطالب</label>
@@ -323,7 +331,6 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                    </div>
                 </div>
 
-                {/* 2. نوع الاشتراك والمسار */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">نوع الاشتراك</label>
@@ -347,7 +354,6 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                    </div>
                 </div>
 
-                {/* 3. المسؤول */}
                 <div className="space-y-1.5 animate-in slide-in-from-top-2">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center">
                       {formData.subscription_type === 'new' ? <Headphones size={12} className="ml-1 text-purple-500" /> : <ShieldCheck size={12} className="ml-1 text-indigo-500" />}
@@ -363,7 +369,6 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                    </select>
                 </div>
 
-                {/* 4. تفاصيل الدفع */}
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <div className="flex items-center justify-between mb-4">
                     <label className="text-xs font-black text-slate-800 flex items-center">
@@ -401,7 +406,6 @@ const StudentExpenses: React.FC<StudentExpensesProps> = ({ onUpdate, selectedBra
                   </div>
                 </div>
 
-                {/* 5. حساب المعلم التفصيلي */}
                 <div className="p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 space-y-6">
                    <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                       <h4 className="text-sm font-black text-slate-800 flex items-center">
