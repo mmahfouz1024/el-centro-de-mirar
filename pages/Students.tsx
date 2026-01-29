@@ -128,7 +128,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
             </div>
             {isTeacher ? 'طلابي المخصصين' : 'شؤون الطلاب'}
           </h2>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2 mr-1">
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 mr-1">
             {isTeacher ? `قائمة الطلاب التابعين لمحاضرة: ${user?.full_name}` : 'إدارة الملفات الأكاديمية والبيانات الموحدة'}
           </p>
         </div>
@@ -305,22 +305,23 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                        <p className="text-[11px] font-black text-slate-700">{student.teacher_name || '---'}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center space-x-1 space-x-reverse opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <button 
-                          onClick={() => navigate('/students/form', { state: { data: student } })} 
-                          className="p-2 text-slate-300 hover:text-blue-600 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-blue-100"
-                        >
-                          <Edit2 size={16}/>
-                        </button>
-                        {!isTeacher && (
+                      {/* تم التعديل هنا: إخفاء الأزرار للمحاضر بالكامل */}
+                      {!isTeacher && (
+                        <div className="flex items-center space-x-1 space-x-reverse opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          <button 
+                            onClick={() => navigate('/students/form', { state: { data: student } })} 
+                            className="p-2 text-slate-300 hover:text-blue-600 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-blue-100"
+                          >
+                            <Edit2 size={16}/>
+                          </button>
                           <button 
                             onClick={() => handleDelete(student.id)} 
                             className="p-2 text-slate-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-rose-100"
                           >
                             <Trash2 size={16}/>
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
