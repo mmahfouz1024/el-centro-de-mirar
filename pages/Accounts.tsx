@@ -16,7 +16,6 @@ import {
   TrendingDown as TrendingDownIcon,
   X,
   Activity,
-  CalendarDays,
   FileText,
   Calendar
 } from 'lucide-react';
@@ -24,7 +23,7 @@ import Salaries from './Salaries';
 import StudentExpenses from './StudentExpenses';
 import { db, supabase } from '../services/supabase';
 
-// 1. تعريف المكونات الفرعية أولاً لتجنب خطأ Initialization
+// 1. المكونات الفرعية أولاً
 const OtherExpensesView: React.FC<{ onUpdate?: () => void, selectedBranch: string }> = ({ onUpdate, selectedBranch }) => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,12 +190,12 @@ const MonthlyReportView = () => {
         db.finance.otherExpenses.getAll()
       ]);
 
-      const monthlyIncome = allIncome.filter(item => {
+      const monthlyIncome = (allIncome || []).filter(item => {
         const d = new Date(item.date);
         return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
       });
 
-      const monthlySalaries = allSalaries.filter(item => {
+      const monthlySalaries = (allSalaries || []).filter(item => {
         if (item.month && item.year) {
           return item.month === selectedDate.month && item.year === selectedDate.year;
         }
@@ -204,7 +203,7 @@ const MonthlyReportView = () => {
         return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
       });
 
-      const monthlyExpenses = allExpenses.filter(item => {
+      const monthlyExpenses = (allExpenses || []).filter(item => {
         const d = new Date(item.date);
         return (d.getMonth() + 1) === selectedDate.month && d.getFullYear() === selectedDate.year;
       });
@@ -369,7 +368,7 @@ const MonthlyReportView = () => {
   );
 };
 
-// 2. المكون الرئيسي يأتي في النهاية
+// 2. المكون الرئيسي
 const Accounts: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'salaries' | 'students' | 'expenses' | 'monthly_report'>('monthly_report');
   const [vaultData, setVaultData] = useState({
@@ -387,14 +386,13 @@ const Accounts: React.FC = () => {
         db.finance.salaries.getAll(),
         db.finance.otherExpenses.getAll()
       ]);
-      const stdIncome = stdExp.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      const totalIn = stdIncome;
-      const salariesOut = salaries.reduce((sum, item) => sum + (Number(item.final_amount) || 0), 0);
-      const otherOut = otherExp.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      const stdIncome = (stdExp || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      const salariesOut = (salaries || []).reduce((sum, item) => sum + (Number(item.final_amount) || 0), 0);
+      const otherOut = (otherExp || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
       const totalOut = salariesOut + otherOut;
       setVaultData({
-        balance: totalIn - totalOut,
-        totalIncome: totalIn,
+        balance: stdIncome - totalOut,
+        totalIncome: stdIncome,
         totalExpense: totalOut,
         loading: false,
         lastUpdate: new Date().toLocaleTimeString('ar-EG')
