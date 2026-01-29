@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -16,6 +17,7 @@ const Classes = lazy(() => import('./pages/Classes'));
 const ClassForm = lazy(() => import('./pages/ClassForm'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Reports = lazy(() => import('./pages/Reports'));
+const Accounts = lazy(() => import('./pages/Accounts')); // تم إضافة الاستيراد المفقود هنا
 const Login = lazy(() => import('./pages/Login'));
 const ManagerLogin = lazy(() => import('./pages/ManagerLogin'));
 const ShariaPrograms = lazy(() => import('./pages/ShariaPrograms'));
@@ -113,6 +115,7 @@ const App: React.FC = () => {
             
             <Route path="/my-earnings" element={role === 'teacher' ? <TeacherEarnings user={user} /> : <Navigate to="/" replace />} />
             <Route path="/staff-earnings" element={role === 'manager' ? <StaffEarnings /> : <Navigate to="/" replace />} />
+            <Route path="/accounts" element={perms.page_finance || role === 'manager' ? <Accounts /> : <Navigate to="/" replace />} />
             
             <Route path="/schedule" element={<Schedule user={user} />} />
             <Route path="/classes" element={perms.page_classes || role === 'manager' ? <Classes user={user} /> : <Navigate to="/" replace />} />
