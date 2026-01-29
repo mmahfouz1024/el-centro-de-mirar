@@ -84,16 +84,16 @@ const Layout: React.FC<{ children: React.ReactNode, user?: any, onLogout?: () =>
     if (perms.page_schedule !== false) items.push({ icon: CalendarClock, label: 'جدول المواعيد', path: '/schedule' });
     if (perms.page_students || role === 'manager') items.push({ icon: Users, label: 'الطلاب', path: '/students' });
     
-    // تم التعديل لضمان ظهور الرابط للمدير دائماً
     if (perms.page_finance || role === 'manager') items.push({ icon: Calculator, label: 'الحسابات والمالية', path: '/accounts' });
     
     if (perms.page_renewal || role === 'manager') items.push({ icon: RefreshCw, label: 'متابعة التجديدات', path: '/renewal-followup' });
-    if (perms.page_attendance || role === 'manager') items.push({ icon: CalendarCheck, label: 'حضور المحاضرين', path: '/teacher-attendance' });
-    if (perms.page_class_eval || role === 'manager') items.push({ icon: ClipboardCheck, label: 'تقييم الحصة', path: '/class-evaluation' });
     
-    if (perms.page_eval_list || role === 'manager' || role === 'supervisor') items.push({ icon: ClipboardList, label: 'سجل التقييمات', path: '/evaluations-list' });
-    
-    if (perms.page_achievements || role === 'manager') items.push({ icon: Trophy, label: 'لوحة الإنجازات', path: '/achievements' });
+    // تم التعديل هنا: إزالة role === 'manager' لإعطاء التحكم الكامل للصلاحيات
+    if (perms.page_attendance) items.push({ icon: CalendarCheck, label: 'حضور المحاضرين', path: '/teacher-attendance' });
+    if (perms.page_class_eval) items.push({ icon: ClipboardCheck, label: 'تقييم الحصة', path: '/class-evaluation' });
+    if (perms.page_eval_list) items.push({ icon: ClipboardList, label: 'سجل التقييمات', path: '/evaluations-list' });
+    if (perms.page_achievements) items.push({ icon: Trophy, label: 'لوحة الإنجازات', path: '/achievements' });
+
     if (perms.page_teachers || role === 'manager') items.push({ icon: UserCheck, label: 'المحاضرون', path: '/teachers' });
     if (perms.page_sales || role === 'manager') items.push({ icon: Headphones, label: 'فريق المبيعات', path: '/sales-employees' });
     if (perms.page_classes || role === 'manager') items.push({ icon: BookOpen, label: 'إدارة المحاضرات', path: '/classes' });
