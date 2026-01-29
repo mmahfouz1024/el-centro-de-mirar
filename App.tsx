@@ -17,7 +17,7 @@ const Classes = lazy(() => import('./pages/Classes'));
 const ClassForm = lazy(() => import('./pages/ClassForm'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Reports = lazy(() => import('./pages/Reports'));
-const Accounts = lazy(() => import('./pages/Accounts')); // تم إضافة الاستيراد المفقود هنا
+const Accounts = lazy(() => import('./pages/Accounts')); 
 const Login = lazy(() => import('./pages/Login'));
 const ManagerLogin = lazy(() => import('./pages/ManagerLogin'));
 const ShariaPrograms = lazy(() => import('./pages/ShariaPrograms'));
@@ -109,9 +109,12 @@ const App: React.FC = () => {
             <Route path="/teachers/form" element={perms.page_teachers || role === 'manager' ? <TeacherForm /> : <Navigate to="/" replace />} />
             
             <Route path="/renewal-followup" element={isAnySupervisor ? <RenewalFollowup /> : <Navigate to="/" replace />} />
-            <Route path="/teacher-attendance" element={isAnySupervisor ? <TeacherAttendance /> : <Navigate to="/" replace />} />
-            <Route path="/class-evaluation" element={isAnySupervisor ? <ClassEvaluation user={user} /> : <Navigate to="/" replace />} />
-            <Route path="/evaluations-list" element={isAnySupervisor ? <EvaluationsList /> : <Navigate to="/" replace />} />
+            
+            {/* تم التعديل هنا لربط الوصول بالصلاحيات بدلاً من الرتبة المطلقة */}
+            <Route path="/teacher-attendance" element={perms.page_attendance ? <TeacherAttendance /> : <Navigate to="/" replace />} />
+            <Route path="/class-evaluation" element={perms.page_class_eval ? <ClassEvaluation user={user} /> : <Navigate to="/" replace />} />
+            <Route path="/evaluations-list" element={perms.page_eval_list ? <EvaluationsList /> : <Navigate to="/" replace />} />
+            <Route path="/achievements" element={perms.page_achievements ? <Achievements /> : <Navigate to="/" replace />} />
             
             <Route path="/my-earnings" element={role === 'teacher' ? <TeacherEarnings user={user} /> : <Navigate to="/" replace />} />
             <Route path="/staff-earnings" element={role === 'manager' ? <StaffEarnings /> : <Navigate to="/" replace />} />
@@ -125,7 +128,6 @@ const App: React.FC = () => {
             <Route path="/users/form" element={perms.page_users || role === 'manager' ? <UserForm /> : <Navigate to="/" replace />} />
             
             <Route path="/reports" element={perms.page_reports || role === 'manager' ? <Reports /> : <Navigate to="/" replace />} />
-            <Route path="/achievements" element={perms.page_achievements || role === 'manager' ? <Achievements /> : <Navigate to="/" replace />} />
             <Route path="/settings" element={perms.page_settings || role === 'manager' ? <SettingsPage user={user} /> : <Navigate to="/" replace />} />
             <Route path="/database" element={role === 'manager' ? <DatabasePage user={user} /> : <Navigate to="/" replace />} />
             <Route path="/profile" element={<Profile user={user} onLogout={handleLogout} />} />
