@@ -19,7 +19,8 @@ import {
   FileText,
   DollarSign,
   TrendingUp,
-  Coins
+  Coins,
+  AlertTriangle
 } from 'lucide-react';
 import { db } from '../services/supabase';
 
@@ -36,6 +37,7 @@ const SalesEmployees: React.FC<SalesEmployeesProps> = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [currentStats, setCurrentStats] = useState<{
@@ -78,6 +80,7 @@ const SalesEmployees: React.FC<SalesEmployeesProps> = ({ user }) => {
 
   const openAddModal = () => {
     setEditingEmployee(null);
+    setErrorMessage(null);
     setFormData({ 
       full_name: '', 
       private_phone: '', 
@@ -92,6 +95,7 @@ const SalesEmployees: React.FC<SalesEmployeesProps> = ({ user }) => {
 
   const openEditModal = (emp: any) => {
     setEditingEmployee(emp);
+    setErrorMessage(null);
     setFormData({
       full_name: emp.full_name || '',
       private_phone: emp.private_phone || '',
@@ -123,6 +127,7 @@ const SalesEmployees: React.FC<SalesEmployeesProps> = ({ user }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setActionLoading(true);
+    setErrorMessage(null);
     try {
       const payload = { 
         ...formData,
@@ -136,7 +141,9 @@ const SalesEmployees: React.FC<SalesEmployeesProps> = ({ user }) => {
       await fetchData();
       setIsModalOpen(false);
     } catch (error: any) {
-      alert('حدث خطأ أثناء الحفظ');
+      console.error("Save Error Detail:", error);
+      // إظهار تفاصيل الخطأ للمستخدم بدلاً من رسالة عامة
+      setErrorMessage(error.message || 'حدث خطأ غير متوقع أثناء الاتصال بقاعدة البيانات');
     } finally {
       setActionLoading(false);
     }
@@ -272,6 +279,16 @@ const SalesEmployees: React.FC<SalesEmployeesProps> = ({ user }) => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {errorMessage && (
+                <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-start gap-3 text-rose-600 animate-shake">
+                   <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                   <div>
+                      <p className="text-xs font-black">خطأ من قاعدة البيانات:</p>
+                      <p className="text-[10px] font-bold leading-relaxed">{errorMessage}</p>
+                   </div>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">الاسم الكامل</label>
                 <input 
