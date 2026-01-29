@@ -16,7 +16,12 @@ import {
   Calendar,
   Layers,
   MapPin,
-  MoreHorizontal
+  MoreHorizontal,
+  UserCheck,
+  UserMinus,
+  RefreshCw,
+  Check,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/supabase';
@@ -27,6 +32,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,6 +88,22 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
       fetchStudents();
     } catch (error) {
       alert('فشل الحذف');
+    }
+  };
+
+  const handleStatusUpdate = async (id: string, newStatus: 'yes' | 'no') => {
+    setUpdatingId(id);
+    try {
+      // تحديث الواجهة فوراً (Optimistic Update)
+      setStudents(prev => prev.map(s => s.id === id ? { ...s, renewal_status: newStatus } : s));
+      
+      // تحديث قاعدة البيانات
+      await db.students.update(id, { renewal_status: newStatus });
+    } catch (error) {
+      alert('فشل تحديث الحالة، يرجى المحاولة مرة أخرى');
+      fetchStudents(); // تراجع عند الخطأ
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -204,7 +226,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
           <div className="py-40 text-center">
             <Users size={80} className="mx-auto text-slate-100 mb-6" />
             <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد سجلات مطابقة</h3>
-            <p className="text-slate-400 font-bold text-sm">لا يوجد طلاب مسجلين لهذا المحاضر حالياً.</p>
+            <p className="text-slate-400 font-bold text-sm">لا يوجد طلاب مسجلين وفق المعايير الحالية.</p>
           </div>
         ) : (
           <div className="overflow-x-auto no-scrollbar">
@@ -213,7 +235,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                 <tr className="bg-slate-50/50 border-b border-slate-100">
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">الطالب / الكود</th>
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">المسار والمستوى</th>
-                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">البيانات</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">حالة الاشتراك</th>
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الموقع</th>
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الاتصال</th>
                   <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">المحاضر</th>
@@ -235,47 +257,74 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${student.enrolled_language ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {student.enrolled_language || 'عام'}
-                        </span>
-                        <span className="text-[9px] font-bold text-slate-500">{student.level}</span>
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs font-black text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg mb-1">{student.enrolled_language}</span>
+                        <span className="text-[10px] font-bold text-slate-400">{student.level}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                       <span className="text-[11px] font-bold text-slate-600">{student.age} سنة • {student.gender}</span>
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleStatusUpdate(student.id, 'yes')}
+                          disabled={updatingId === student.id}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${
+                            student.renewal_status === 'yes'
+                              ? 'bg-emerald-500 text-white shadow-md scale-105'
+                              : 'bg-white text-emerald-600 border border-emerald-100 hover:bg-emerald-50'
+                          }`}
+                        >
+                          {student.renewal_status === 'yes' && <Check size={12} />}
+                          جدد
+                        </button>
+                        <button
+                          onClick={() => handleStatusUpdate(student.id, 'no')}
+                          disabled={updatingId === student.id}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${
+                            student.renewal_status === 'no'
+                              ? 'bg-rose-500 text-white shadow-md scale-105'
+                              : 'bg-white text-rose-600 border border-rose-100 hover:bg-rose-50'
+                          }`}
+                        >
+                          {student.renewal_status === 'no' && <X size={12} />}
+                          توقف
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center text-[11px] font-bold text-slate-600">
-                        <MapPin size={12} className="ml-1 text-rose-500" />
+                      <div className="flex items-center justify-center text-xs font-bold text-slate-500">
+                        <MapPin size={12} className="ml-1 text-slate-400" />
                         {student.country}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center text-[11px] font-bold text-slate-600 dir-ltr">
-                        <Smartphone size={12} className="mr-1 text-emerald-500" />
-                        {student.parent_phone}
+                      <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                        <a href={`tel:${student.parent_phone}`} className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-blue-100 hover:text-blue-600 transition-colors">
+                          <Smartphone size={14} />
+                        </a>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                       <p className="text-[11px] font-black text-slate-700">{student.teacher_name || '---'}</p>
+                      <div className="flex items-center justify-center text-[10px] font-black text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                        <User size={12} className="ml-1 text-amber-500" />
+                        {student.teacher_name || 'غير محدد'}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center space-x-1 space-x-reverse">
+                      <div className="flex items-center justify-end space-x-1 space-x-reverse opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <button 
-                          onClick={() => navigate('/students/form', { state: { data: student } })} 
-                          className="p-2 text-slate-300 hover:text-blue-600 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-blue-100"
+                          onClick={() => navigate('/students/form', { state: { data: student } })}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-white rounded-xl transition-all"
+                          title="تعديل"
                         >
-                          <Edit2 size={16}/>
+                          <Edit2 size={16} />
                         </button>
-                        {!isTeacher && (
-                          <button 
-                            onClick={() => handleDelete(student.id)} 
-                            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-rose-100"
-                          >
-                            <Trash2 size={16}/>
-                          </button>
-                        )}
+                        <button 
+                          onClick={() => handleDelete(student.id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-white rounded-xl transition-all"
+                          title="حذف"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -285,20 +334,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
           </div>
         )}
       </div>
-
-      {/* Footer Stats */}
-      {!loading && filteredStudents.length > 0 && (
-        <div className="flex items-center justify-between px-8 py-4 bg-slate-900 rounded-3xl text-white shadow-xl">
-           <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">إجمالي النتائج:</span>
-                 <span className="text-sm font-black">{filteredStudents.length} طالب</span>
-              </div>
-           </div>
-           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">El Centro de Mirar • Database Live</p>
-        </div>
-      )}
     </div>
   );
 };

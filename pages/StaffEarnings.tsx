@@ -29,7 +29,8 @@ import {
   Stamp,
   Copy,
   AlertTriangle,
-  Zap
+  Zap,
+  MoreHorizontal
 } from 'lucide-react';
 import { db, formatAppDate } from '../services/supabase';
 
@@ -156,36 +157,88 @@ const StaffEarnings: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-         {loading ? (
-            <div className="col-span-full py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-200" size={60} /></div>
-         ) : monthlySummary.map(item => (
-           <div key={item.id} className="bg-white p-10 rounded-huge custom-shadow border border-slate-100 hover:border-amber-400/50 transition-all flex flex-col">
-              <div className="flex justify-between items-start mb-8">
-                <div className="flex items-center space-x-4 space-x-reverse">
-                  <div className="w-16 h-16 rounded-[1.8rem] bg-slate-50 flex items-center justify-center text-slate-900 font-black text-2xl">{item.full_name[0]}</div>
-                  <div>
-                    <h4 className="font-black text-slate-800 text-lg">{item.full_name}</h4>
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase mt-1">سعر الساعة: {item.hourly_rate || 65}ج</p>
-                  </div>
-                </div>
-                {item.isPaid ? <div className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl text-[10px] font-black border border-emerald-100">تم الصرف</div> : <div className="bg-rose-50 text-rose-600 px-3 py-1.5 rounded-xl text-[10px] font-black animate-pulse">معلق</div>}
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                 <div className="bg-slate-50 p-5 rounded-[2rem] text-center"><span className="block text-2xl font-black">{item.classesCount}</span><span className="text-[10px] font-black text-slate-400">حصة</span></div>
-                 <div className="bg-amber-50 p-5 rounded-[2rem] text-center"><span className="block text-2xl font-black text-amber-600">{item.earnedSalary} <span className="text-xs">ج</span></span><span className="text-[10px] font-black text-amber-800">الاستحقاق</span></div>
-              </div>
-              <div className="mt-auto">
-                {!item.isPaid ? (
-                  <button onClick={() => { setSelectedTeacherForPayment(item); setIsPaymentModalOpen(true); }} className="w-full bg-slate-900 text-white py-5 rounded-[1.8rem] text-sm font-black shadow-xl hover:bg-amber-500 transition-all flex items-center justify-center">
-                    <CheckCircle size={20} className="ml-3" /> اعتماد الصرف المالي
-                  </button>
-                ) : (
-                  <button className="w-full bg-slate-50 text-slate-300 py-5 rounded-[1.8rem] text-sm font-black cursor-not-allowed">تمت التسوية بنجاح</button>
-                )}
-              </div>
-           </div>
-         ))}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="w-full text-right">
+            <thead className="bg-slate-50 border-b border-slate-100">
+              <tr>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">المحاضر</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">سعر الساعة</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">عدد الحصص</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">إجمالي المستحق</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الحالة</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">الإجراء</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <Loader2 className="animate-spin mx-auto text-slate-200" size={40} />
+                  </td>
+                </tr>
+              ) : monthlySummary.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center text-slate-400 font-bold">لا توجد بيانات مستحقات لهذه الفترة</td>
+                </tr>
+              ) : (
+                monthlySummary.map(item => (
+                  <tr key={item.id} className="group hover:bg-slate-50 transition-colors">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 font-black text-sm">
+                          {item.full_name[0]}
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-800">{item.full_name}</p>
+                          <p className="text-[9px] font-bold text-slate-400">{item.specialization || 'عام'}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-center">
+                      <span className="text-xs font-bold text-slate-600">{item.hourly_rate || 65} ج.م</span>
+                    </td>
+                    <td className="px-8 py-5 text-center">
+                      <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
+                        <BookOpen size={12} />
+                        <span className="text-xs font-black">{item.classesCount}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-center">
+                      <span className="text-sm font-black text-emerald-600">{item.earnedSalary} ج.م</span>
+                    </td>
+                    <td className="px-8 py-5 text-center">
+                      {item.isPaid ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                          <CheckCircle2 size={12} /> تم الصرف
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-rose-500 bg-rose-50 px-2 py-1 rounded-lg animate-pulse">
+                          <AlertCircle size={12} /> معلق
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-8 py-5">
+                      {!item.isPaid ? (
+                        <button 
+                          onClick={() => { setSelectedTeacherForPayment(item); setIsPaymentModalOpen(true); }}
+                          className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-amber-500 transition-all shadow-lg active:scale-95"
+                        >
+                          <Banknote size={14} />
+                          اعتماد الصرف
+                        </button>
+                      ) : (
+                        <button disabled className="text-slate-300 cursor-not-allowed">
+                          <MoreHorizontal size={20} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {isPaymentModalOpen && selectedTeacherForPayment && (
