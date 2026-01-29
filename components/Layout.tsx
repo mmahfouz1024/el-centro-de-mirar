@@ -1,467 +1,222 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
-  TrendingUp, 
+  LayoutDashboard, 
   Users, 
-  PieChart as PieChartIcon, 
-  ShieldCheck, 
-  BarChart3, 
-  Activity, 
-  Award, 
-  RefreshCw, 
-  Wallet,
-  Briefcase,
+  BookOpen, 
+  UserCheck, 
+  Settings, 
+  UserCog, 
+  TrendingUp, 
+  Calculator, 
+  Database, 
+  Trophy, 
+  CalendarCheck, 
+  LogOut, 
+  Search, 
+  Bell, 
+  Menu,
+  ClipboardCheck,
+  ClipboardList,
+  RefreshCw,
   Headphones,
-  UserCheck,
-  UserPlus,
-  UserMinus,
-  Percent,
-  Coins,
-  ArrowUpRight,
+  Wallet,
+  CalendarClock,
+  HandCoins,
   Sparkles,
-  Target,
-  Gem,
-  Globe,
-  Languages,
-  MapPin,
-  ChevronLeft,
-  UserX
+  Command
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell,
-  BarChart,
-  Bar,
-  Legend
-} from 'recharts';
-import { db } from '../services/supabase';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import Logo from './Logo';
 
-const ManagerDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    students: [] as any[],
-    profiles: [] as any[],
-    salesTeam: [] as any[],
-    studentIncome: [] as any[], // تحصيلات الطلاب
-    salaries: [] as any[],     // الرواتب المصروفة
-    otherExpenses: [] as any[] // المصروفات الإدارية
-  });
+interface MenuItem {
+  icon: any;
+  label: string;
+  path?: string;
+}
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
-
-  const fetchAllData = async () => {
-    try {
-      setLoading(true);
-      const [students, profiles, salesTeam, studentIncome, salaries, otherExpenses] = await Promise.all([
-        db.students.getAll(),
-        db.profiles.getAll(),
-        db.salesTeam.getAll(),
-        db.finance.studentExpenses.getAll(),
-        db.finance.salaries.getAll(),
-        db.finance.otherExpenses.getAll()
-      ]);
-      
-      setData({
-        students: students || [],
-        profiles: profiles || [],
-        salesTeam: salesTeam || [],
-        studentIncome: studentIncome || [],
-        salaries: salaries || [],
-        otherExpenses: otherExpenses || []
-      });
-    } catch (error) {
-      console.error('Error fetching manager dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 1. Staff Stats
-  const staffStats = useMemo(() => {
-    const teachers = data.profiles.filter(p => p.role === 'teacher').length;
-    const supervisors = data.profiles.filter(p => p.role === 'supervisor' || p.role === 'general_supervisor').length;
-    const sales = data.salesTeam.length;
-    return { teachers, supervisors, sales };
-  }, [data.profiles, data.salesTeam]);
-
-  // 2. Student & Renewal Stats
-  const studentStats = useMemo(() => {
-    const totalStudents = data.students.length;
-    const renewing = data.students.filter(s => s.renewal_status === 'yes').length;
-    const notRenewing = data.students.filter(s => s.renewal_status === 'no').length;
-    const undecided = data.students.filter(s => s.renewal_status === 'undecided' || !s.renewal_status).length;
-    const renewalRate = totalStudents > 0 ? Math.round((renewing / totalStudents) * 100) : 0;
-    return { renewing, notRenewing, undecided, renewalRate, totalStudents };
-  }, [data.students]);
-
-  // 3. Geographical & Language Stats
-  const topInsights = useMemo(() => {
-    const countries: Record<string, number> = {};
-    const languages: Record<string, number> = {};
-
-    data.students.forEach(s => {
-      if (s.country) countries[s.country] = (countries[s.country] || 0) + 1;
-      if (s.enrolled_language) languages[s.enrolled_language] = (languages[s.enrolled_language] || 0) + 1;
-    });
-
-    const topCountries = Object.entries(countries)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
-      .map(([name, count]) => ({ name, count }));
-
-    const topLanguages = Object.entries(languages)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
-      .map(([name, count]) => ({ name, count }));
-
-    return { topCountries, topLanguages };
-  }, [data.students]);
-
-  // 4. Financial Stats (Actual Data)
-  const totalRevenue = useMemo(() => {
-    return data.studentIncome.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-  }, [data.studentIncome]);
-
-  const chartData = useMemo(() => {
-    const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-    const currentMonth = new Date().getMonth();
-    const result = [];
-
-    for (let i = 5; i >= 0; i--) {
-      const monthIdx = (currentMonth - i + 12) % 12;
-      const monthName = months[monthIdx];
-      const monthlySum = data.studentIncome
-        .filter(inc => new Date(inc.date).getMonth() === monthIdx)
-        .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-      
-      result.push({ name: monthName, value: monthlySum });
-    }
-    return result;
-  }, [data.studentIncome]);
-
-  const distributionData = useMemo(() => {
-    const totalSalaries = data.salaries.reduce((acc, curr) => acc + (Number(curr.final_amount) || 0), 0);
-    const totalOtherExp = data.otherExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-    const netProfit = totalRevenue - totalSalaries - totalOtherExp;
-    
-    return [
-      { name: 'الرواتب المصروفة', value: totalSalaries, color: '#10b981' }, 
-      { name: 'مصروفات إدارية', value: totalOtherExp, color: '#3b82f6' }, 
-      { name: 'صافي الربح المتبقي', value: Math.max(0, netProfit), color: '#f59e0b' }
-    ];
-  }, [data.salaries, data.otherExpenses, totalRevenue]);
+const SidebarItem: React.FC<{ item: MenuItem, active: boolean, role: string, onClick?: () => void }> = ({ item, active, role, onClick }) => {
+  const Icon = item.icon;
+  
+  // تصميم ديناميكي يعتمد على ألوان البراند
+  let activeStyle = "bg-gradient-to-r from-amber-600 to-amber-400 text-white shadow-lg shadow-amber-900/40";
+  if (role === 'manager') activeStyle = "bg-gradient-to-r from-blue-700 to-indigo-600 text-white shadow-lg shadow-blue-900/40";
 
   return (
-    <div className="space-y-10 pb-20 text-right animate-in fade-in duration-700" dir="rtl">
+    <Link 
+      to={item.path || '#'}
+      onClick={onClick}
+      className={`relative flex items-center space-x-3 space-x-reverse p-4 rounded-2xl transition-all duration-500 group overflow-hidden ${
+        active 
+          ? `${activeStyle} font-black scale-[1.02] translate-x-[-8px]` 
+          : `text-slate-400 font-bold hover:bg-white/5 hover:text-white`
+      }`}
+    >
+      <div className={`transition-all duration-500 ${active ? 'scale-110 rotate-0' : 'group-hover:scale-125 group-hover:rotate-12'}`}>
+         <Icon size={20} />
+      </div>
+      <span className="text-[13px] relative z-10">{item.label}</span>
       
-      {/* Hero Header */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-10 lg:p-14 rounded-[3.5rem] text-white shadow-2xl overflow-hidden group">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[100px] animate-float-slow"></div>
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+      {active && (
+        <div className="mr-auto">
+          <Sparkles size={14} className="animate-pulse text-white/50" />
+        </div>
+      )}
+    </Link>
+  );
+};
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="space-y-4">
-            <div className="inline-flex items-center px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
-               <ShieldCheck size={16} className="ml-2 text-amber-400 animate-pulse" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-100">بوابة الإدارة العليا</span>
-            </div>
-            <h2 className="text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-              الرؤية العامة <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">للمؤسسة</span>
-            </h2>
-            <p className="text-slate-300 font-medium text-lg max-w-xl leading-relaxed">
-              تحليلات استراتيجية فورية للأداء المالي، الكادر البشري، ومؤشرات نمو الطلاب لدعم اتخاذ القرار.
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-             <div className="bg-white/5 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 text-center min-w-[160px] group-hover:bg-white/10 transition-colors">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">إجمالي الطلاب</p>
-                <h3 className="text-4xl font-black text-white">{studentStats.totalStudents}</h3>
-                <div className="flex items-center justify-center gap-1 mt-2 text-[9px] font-bold text-emerald-400 uppercase">
-                  <Activity size={10} />
-                  <span>جميع المسجلين</span>
+const Layout: React.FC<{ children: React.ReactNode, user?: any, onLogout?: () => void }> = ({ children, user, onLogout }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  const role = user?.role || 'teacher';
+  const perms = user?.permissions || {};
+
+  const menuItems: MenuItem[] = (() => {
+    const items: MenuItem[] = [];
+    if (role === 'teacher') items.push({ icon: LayoutDashboard, label: 'لوحة المحاضر', path: '/teacher-dashboard' });
+    else if (role === 'manager') items.push({ icon: LayoutDashboard, label: 'الرؤية العامة', path: '/manager-dashboard' });
+    else items.push({ icon: LayoutDashboard, label: 'لوحة الإشراف', path: '/' });
+
+    if (role === 'teacher') items.push({ icon: Wallet, label: 'مستحقاتي', path: '/my-earnings' });
+    if (role === 'manager') items.push({ icon: HandCoins, label: 'مستحقات المحاضرين', path: '/staff-earnings' });
+    
+    if (perms.page_schedule !== false) items.push({ icon: CalendarClock, label: 'جدول المواعيد', path: '/schedule' });
+    
+    if (perms.page_students || role === 'manager' || role === 'teacher') {
+      items.push({ 
+        icon: Users, 
+        label: role === 'teacher' ? 'طلابي' : 'الطلاب', 
+        path: '/students' 
+      });
+    }
+    
+    // تم التعديل هنا: السماح للمحاضر برؤية محاضراته بتسمية مخصصة
+    if (perms.page_classes || role === 'manager' || role === 'teacher') {
+      items.push({ 
+        icon: BookOpen, 
+        label: role === 'teacher' ? 'سجل محاضراتي' : 'إدارة المحاضرات', 
+        path: '/classes' 
+      });
+    }
+
+    if (perms.page_finance || role === 'manager') items.push({ icon: Calculator, label: 'الحسابات والمالية', path: '/accounts' });
+    
+    if (perms.page_renewal || role === 'manager') items.push({ icon: RefreshCw, label: 'متابعة التجديدات', path: '/renewal-followup' });
+    
+    if (perms.page_attendance) items.push({ icon: CalendarCheck, label: 'حضور المحاضرين', path: '/teacher-attendance' });
+    if (perms.page_class_eval) items.push({ icon: ClipboardCheck, label: 'تقييم الحصة', path: '/class-evaluation' });
+    if (perms.page_eval_list) items.push({ icon: ClipboardList, label: 'سجل التقييمات', path: '/evaluations-list' });
+    if (perms.page_achievements) items.push({ icon: Trophy, label: 'لوحة الإنجازات', path: '/achievements' });
+
+    if (perms.page_teachers || role === 'manager') items.push({ icon: UserCheck, label: 'المحاضرون', path: '/teachers' });
+    if (perms.page_sales || role === 'manager') items.push({ icon: Headphones, label: 'فريق المبيعات', path: '/sales-employees' });
+    if (perms.page_reports || role === 'manager') items.push({ icon: TrendingUp, label: 'التقارير التحليلية', path: '/reports' });
+    if (perms.page_database || role === 'manager') items.push({ icon: Database, label: 'قاعدة البيانات', path: '/database' });
+    if (perms.page_users || role === 'manager') items.push({ icon: UserCog, label: 'صلاحيات النظام', path: '/users' });
+    if (perms.page_settings || role === 'manager') items.push({ icon: Settings, label: 'إعدادات النظام', path: '/settings' });
+
+    items.push({ icon: Settings, label: 'الملف الشخصي', path: '/profile' });
+    return items;
+  })();
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] flex font-['Tajawal']" dir="rtl">
+      
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[60] lg:hidden" onClick={() => setIsSidebarOpen(false)}></div>
+      )}
+
+      {/* Sidebar الفاخرة المحدثة */}
+      <aside className={`fixed inset-y-0 right-0 z-[70] w-72 bg-premium-dark transition-all duration-700 transform ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} lg:translate-x-0 lg:static shadow-[10px_0_60px_rgba(0,0,0,0.1)] flex flex-col`}>
+        <div className="h-36 flex flex-col items-center justify-center relative overflow-hidden border-b border-white/5">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-[50px]"></div>
+           <div className="relative z-10 flex flex-col items-center">
+              <div className="p-1 bg-gradient-to-tr from-amber-500 to-yellow-200 rounded-full shadow-2xl animate-float">
+                <div className="bg-slate-900 rounded-full p-1">
+                   <Logo size={70} />
                 </div>
-             </div>
-
-             <div className="bg-rose-500/10 backdrop-blur-xl p-6 rounded-[2.5rem] border border-rose-500/20 text-center min-w-[160px] group-hover:bg-rose-500/20 transition-colors">
-                <p className="text-[10px] font-black text-rose-300 uppercase tracking-widest mb-1">طلاب متوقفين</p>
-                <h3 className="text-4xl font-black text-rose-400">{studentStats.notRenewing}</h3>
-                <div className="flex items-center justify-center gap-1 mt-2 text-[9px] font-bold text-rose-300 uppercase">
-                  <UserX size={10} />
-                  <span>بدون تجديد</span>
-                </div>
-             </div>
-
-             <button 
-               onClick={fetchAllData} 
-               className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 hover:scale-110 hover:rotate-180 transition-all duration-500"
-             >
-               <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
-             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-[3rem] -mr-4 -mt-4 transition-all group-hover:scale-150 group-hover:bg-emerald-100"></div>
-            <div className="relative z-10">
-               <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-200">
-                  <Award size={28} />
-               </div>
-               <h4 className="text-3xl font-black text-slate-800 mb-1">{staffStats.teachers}</h4>
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">الكادر التعليمي</p>
-            </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-[3rem] -mr-4 -mt-4 transition-all group-hover:scale-150 group-hover:bg-blue-100"></div>
-            <div className="relative z-10">
-               <div className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
-                  <UserCheck size={28} />
-               </div>
-               <h4 className="text-3xl font-black text-slate-800 mb-1">{staffStats.supervisors}</h4>
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">الإشراف التربوي</p>
-            </div>
-        </div>
-
-        <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-bl-[3rem] -mr-4 -mt-4 transition-all group-hover:scale-150 group-hover:bg-purple-100"></div>
-            <div className="relative z-10">
-               <div className="w-14 h-14 bg-purple-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-200">
-                  <Headphones size={28} />
-               </div>
-               <h4 className="text-3xl font-black text-slate-800 mb-1">{staffStats.sales}</h4>
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">فريق المبيعات</p>
-            </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[3rem] text-white shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-            <div className="relative z-10 flex flex-col h-full justify-between">
-               <div className="flex justify-between items-start">
-                  <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
-                     <Percent size={28} className="text-amber-400" />
-                  </div>
-                  <div className="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg">LIVE</div>
-               </div>
-               <div>
-                  <h4 className="text-4xl font-black text-white mb-1">{studentStats.renewalRate}%</h4>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">نسبة التجديد العامة</p>
-                  <div className="w-full h-1.5 bg-white/10 rounded-full mt-4 overflow-hidden">
-                     <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" style={{ width: `${studentStats.renewalRate}%` }}></div>
-                  </div>
-               </div>
-            </div>
-        </div>
-      </div>
-
-      {/* Insights: Countries & Languages */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-            <div className="flex items-center justify-between mb-8">
-               <div className="flex items-center gap-3">
-                  <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:scale-110 transition-transform">
-                     <Globe size={24} />
-                  </div>
-                  <div>
-                     <h3 className="text-xl font-black text-slate-800">أكثر الدول اشتراكاً</h3>
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">التوزيع الجغرافي للطلاب</p>
-                  </div>
-               </div>
-            </div>
-            
-            <div className="space-y-4">
-               {topInsights.topCountries.length > 0 ? topInsights.topCountries.map((country, idx) => (
-                  <div key={country.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-blue-50/30 transition-colors">
-                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-blue-600 shadow-sm">
-                           {idx + 1}
-                        </div>
-                        <span className="text-sm font-black text-slate-700">{country.name}</span>
-                     </div>
-                     <div className="flex items-center gap-3">
-                        <span className="text-sm font-black text-slate-800">{country.count}</span>
-                        <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                           <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(country.count / studentStats.totalStudents) * 100}%` }}></div>
-                        </div>
-                     </div>
-                  </div>
-               )) : (
-                  <div className="text-center py-10 text-slate-300 font-bold">لا توجد بيانات دول متاحة حالياً.</div>
-               )}
-            </div>
-         </div>
-
-         <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-            <div className="flex items-center justify-between mb-8">
-               <div className="flex items-center gap-3">
-                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:scale-110 transition-transform">
-                     <Languages size={24} />
-                  </div>
-                  <div>
-                     <h3 className="text-xl font-black text-slate-800">أكثر اللغات اشتراكاً</h3>
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">تحليل المسارات التعليمية</p>
-                  </div>
-               </div>
-            </div>
-            
-            <div className="space-y-4">
-               {topInsights.topLanguages.length > 0 ? topInsights.topLanguages.map((lang, idx) => (
-                  <div key={lang.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-emerald-50/30 transition-colors">
-                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-emerald-600 shadow-sm">
-                           {idx + 1}
-                        </div>
-                        <span className="text-sm font-black text-slate-700">{lang.name}</span>
-                     </div>
-                     <div className="flex items-center gap-3">
-                        <span className="text-sm font-black text-slate-800">{lang.count}</span>
-                        <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(lang.count / studentStats.totalStudents) * 100}%` }}></div>
-                        </div>
-                     </div>
-                  </div>
-               )) : (
-                  <div className="text-center py-10 text-slate-300 font-bold">لا توجد بيانات لغات متاحة حالياً.</div>
-               )}
-            </div>
-         </div>
-      </div>
-
-      {/* Main Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Revenue Area Chart */}
-        <div className="lg:col-span-2 bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-           <div className="flex items-center justify-between mb-10">
-              <div>
-                 <div className="flex items-center gap-2">
-                    <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600"><TrendingUp size={20}/></div>
-                    <h3 className="text-xl font-black text-slate-800">تحليل النمو المالي</h3>
-                 </div>
-                 <p className="text-xs font-bold text-slate-400 mt-2 pr-10">مراقبة تدفق الاشتراكات والإيرادات خلال الـ 6 أشهر الماضية.</p>
               </div>
-              <div className="text-left hidden sm:block">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">الإيراد الحالي</p>
-                 <p className="text-2xl font-black text-emerald-600">{totalRevenue.toLocaleString()} ج.م</p>
-              </div>
-           </div>
-
-           <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={chartData}>
-                    <defs>
-                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                       </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 'bold'}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} tickFormatter={(val) => `${val/1000}k`} />
-                    <Tooltip 
-                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)' }}
-                       itemStyle={{ color: '#0f172a', fontWeight: 'bold' }}
-                       formatter={(value) => [`${Number(value).toLocaleString()} ج.م`, 'الإيراد']} 
-                    />
-                    <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={4} fill="url(#colorRevenue)" />
-                 </AreaChart>
-              </ResponsiveContainer>
+              <h1 className="text-sm font-black text-amber-500 uppercase tracking-[0.3em] mt-3 drop-shadow-lg">MIRAR CENTER</h1>
            </div>
         </div>
 
-        {/* Distribution Pie Chart - Updated to match system actuals */}
-        <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
-           <div>
-              <div className="flex items-center gap-2 mb-2">
-                 <div className="p-2 bg-blue-50 rounded-xl text-blue-600"><PieChartIcon size={20}/></div>
-                 <h3 className="text-xl font-black text-slate-800">توزيع السيولة (بيانات حقيقية)</h3>
-              </div>
-              <p className="text-xs font-bold text-slate-400">تحليل المصروفات التشغيلية والرواتب مقابل صافي الربح.</p>
-           </div>
-
-           <div className="h-64 w-full relative my-4">
-              <ResponsiveContainer width="100%" height="100%">
-                 <PieChart>
-                    <Pie
-                       data={distributionData}
-                       cx="50%"
-                       cy="50%"
-                       innerRadius={60}
-                       outerRadius={80}
-                       paddingAngle={5}
-                       dataKey="value"
-                       stroke="none"
-                    >
-                       {distributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                       ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(val) => `${Number(val).toLocaleString()} ج.م`} 
-                      contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'}} 
-                    />
-                 </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                 <span className="text-[10px] font-black text-slate-400 uppercase">إجمالي الدخل</span>
-                 <p className="text-lg font-black text-slate-800">{totalRevenue.toLocaleString()}</p>
-              </div>
-           </div>
-
-           <div className="space-y-3">
-              {distributionData.map((item, i) => (
-                 <div key={i} className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-2">
-                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                       <span className="text-xs font-black text-slate-600">{item.name}</span>
-                    </div>
-                    <span className="text-xs font-black text-slate-800 dir-ltr">{item.value.toLocaleString()}</span>
-                 </div>
+        <div className="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar space-y-2">
+            <div className="flex items-center space-x-2 space-x-reverse px-4 mb-6 opacity-30">
+               <Command size={14} className="text-white" />
+               <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">التحكم المركزي</p>
+            </div>
+            <nav className="space-y-1.5">
+              {menuItems.map((item) => (
+                <SidebarItem key={item.label} item={item} active={item.path === location.pathname} role={role} onClick={() => setIsSidebarOpen(false)} />
               ))}
+            </nav>
+        </div>
+
+        <div className="p-6">
+           <div className="bg-white/5 p-4 rounded-[2rem] border border-white/5 flex items-center gap-4 group hover:bg-white/10 transition-all">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-black text-xl shadow-lg group-hover:scale-110 transition-transform">
+                 {user?.full_name?.[0]}
+              </div>
+              <div className="flex-1 overflow-hidden">
+                 <p className="text-xs font-black text-white truncate">{user?.full_name}</p>
+                 <p className="text-[9px] font-bold text-amber-500/70 uppercase tracking-widest">{role}</p>
+              </div>
+              <button onClick={onLogout} className="p-2.5 text-slate-500 hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/10">
+                 <LogOut size={20} />
+              </button>
            </div>
         </div>
-      </div>
+      </aside>
 
-      {/* Quick Access Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-         {[
-            { label: 'إدارة المعلمين', icon: Briefcase, path: '/teachers', color: 'bg-emerald-100 text-emerald-700' },
-            { label: 'المالية والرواتب', icon: Wallet, path: '/accounts', color: 'bg-blue-100 text-blue-700' },
-            { label: 'تقارير الأداء', icon: Activity, path: '/reports', color: 'bg-amber-100 text-amber-700' },
-            { label: 'إعدادات النظام', icon: Target, path: '/settings', color: 'bg-slate-100 text-slate-700' },
-         ].map((item, idx) => (
-            <div 
-               key={idx} 
-               onClick={() => navigate(item.path)}
-               className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex items-center justify-between group"
-            >
-               <span className="text-xs font-black text-slate-700">{item.label}</span>
-               <div className={`p-2 rounded-xl ${item.color} group-hover:scale-110 transition-transform`}>
-                  <item.icon size={18} />
-               </div>
-            </div>
-         ))}
-      </div>
+      {/* محتوى الصفحة الرئيسي بتصميم عصري */}
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#f1f5f9]">
+        <header className="h-24 px-10 flex items-center justify-between sticky top-0 z-40 bg-[#f1f5f9]/80 backdrop-blur-xl border-b border-slate-200/50">
+           <div className="flex items-center gap-6">
+              <button className="lg:hidden p-3 bg-white text-slate-600 shadow-md rounded-2xl border border-slate-100" onClick={() => setIsSidebarOpen(true)}>
+                <Menu size={24} />
+              </button>
+              <div className="animate-in fade-in slide-in-from-right duration-1000">
+                 <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center">
+                   <div className="w-2 h-8 bg-amber-500 rounded-full ml-3 hidden md:block"></div>
+                   لوحة الإدارة الذكية
+                 </h2>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">EL CENTRO DE MIRAR • ENTERPRISE v2.5</p>
+              </div>
+           </div>
 
+           <div className="flex items-center space-x-5 space-x-reverse">
+              <div className="hidden xl:flex items-center bg-white px-6 py-3.5 rounded-[1.5rem] shadow-sm border border-slate-200 focus-within:ring-4 focus-within:ring-amber-500/10 focus-within:border-amber-500/40 transition-all w-96 group">
+                 <Search size={18} className="text-slate-400 ml-3 group-focus-within:text-amber-500 transition-colors" />
+                 <input type="text" placeholder="بحث ذكي في السجلات..." className="bg-transparent border-none outline-none text-sm font-bold text-slate-700 w-full placeholder:text-slate-300" />
+              </div>
+              
+              <button className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-slate-500 hover:text-amber-600 border border-slate-200 shadow-sm transition-all relative hover:scale-110 active:scale-95">
+                 <Bell size={24} />
+                 <span className="absolute top-4 right-4 w-3 h-3 bg-rose-500 rounded-full border-2 border-white shadow-sm"></span>
+              </button>
+              
+              <div className="p-1 bg-gradient-to-tr from-amber-600 to-yellow-400 rounded-2xl shadow-xl shadow-amber-500/20">
+                 <div className="bg-white rounded-xl px-4 py-2 flex items-center gap-3">
+                    <Sparkles className="text-amber-500 animate-pulse" size={18} />
+                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-tighter">Premium Access</span>
+                 </div>
+              </div>
+           </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar relative">
+           {/* زخرفة خلفية خفيفة */}
+           <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+           
+           <div className="max-w-[1600px] mx-auto pb-20 relative z-10">
+              {children}
+           </div>
+        </div>
+      </main>
     </div>
   );
 };
 
-export default ManagerDashboard;
+export default Layout;
