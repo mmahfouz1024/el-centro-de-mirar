@@ -102,7 +102,8 @@ const App: React.FC = () => {
             
             <Route path="/student-tracking/:studentId" element={<StudentTracking />} />
             
-            <Route path="/students" element={perms.page_students || role === 'manager' ? <Students user={user} /> : <Navigate to="/" replace />} />
+            {/* تم التعديل هنا للسماح للمحاضر بالوصول لصفحة الطلاب */}
+            <Route path="/students" element={perms.page_students || role === 'manager' || role === 'teacher' ? <Students user={user} /> : <Navigate to="/" replace />} />
             <Route path="/students/form" element={perms.page_students || role === 'manager' ? <StudentForm user={user} /> : <Navigate to="/" replace />} />
 
             <Route path="/teachers" element={perms.page_teachers || role === 'manager' ? <Teachers user={user} /> : <Navigate to="/" replace />} />
@@ -110,7 +111,6 @@ const App: React.FC = () => {
             
             <Route path="/renewal-followup" element={isAnySupervisor ? <RenewalFollowup /> : <Navigate to="/" replace />} />
             
-            {/* تم التعديل هنا لربط الوصول بالصلاحيات بدلاً من الرتبة المطلقة */}
             <Route path="/teacher-attendance" element={perms.page_attendance ? <TeacherAttendance /> : <Navigate to="/" replace />} />
             <Route path="/class-evaluation" element={perms.page_class_eval ? <ClassEvaluation user={user} /> : <Navigate to="/" replace />} />
             <Route path="/evaluations-list" element={perms.page_eval_list ? <EvaluationsList /> : <Navigate to="/" replace />} />
