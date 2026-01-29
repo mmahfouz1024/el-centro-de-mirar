@@ -6,7 +6,8 @@ import {
   CheckCircle2, 
   Clock,
   ArrowLeftRight,
-  Timer
+  Timer,
+  User
 } from 'lucide-react';
 import { db } from '../services/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -23,6 +24,8 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [studentsList, setStudentsList] = useState<any[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const isTeacher = user?.role === 'teacher';
 
   // Helper to get Arabic Day
   const getArabicDay = (dateStr: string) => {
@@ -62,7 +65,8 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
       setTeachers(teachersData || []);
 
       let availableStudents = studentsData || [];
-      if (user && user.role === 'teacher') {
+      // تم التعديل: المحاضر يرى طلابه المرتبطين به فقط في القائمة
+      if (isTeacher && user?.full_name) {
         availableStudents = availableStudents.filter((s: any) => s.teacher_name === user.full_name);
       }
       setStudentsList(availableStudents);
@@ -80,7 +84,7 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
           branch: editingHalaqa.branch
         });
       } else {
-        if (user && user.role !== 'teacher') {
+        if (!isTeacher) {
            if(teachersData && teachersData.length > 0) {
                const defaultTeacher = teachersData[0];
                setFormData(prev => ({ 
@@ -89,16 +93,18 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
                  class_type: defaultTeacher.specialization || 'اسبانى'
                }));
            }
-        } else if (user?.role === 'teacher') {
+        } else if (isTeacher) {
             const myProfile = teachersData?.find(t => t.full_name === user.full_name);
             if (myProfile?.specialization) {
               setFormData(prev => ({ ...prev, class_type: myProfile.specialization }));
             }
+            // التأكد من تثبيت اسم المحاضر
+            setFormData(prev => ({ ...prev, teacher: user.full_name }));
         }
       }
     };
     fetchData();
-  }, [editingHalaqa, user]);
+  }, [editingHalaqa, user, isTeacher]);
 
   // تحديث وقت الانتهاء تلقائياً عند تغيير وقت البدء أو المدة
   useEffect(() => {
@@ -218,6 +224,9 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
                   <option key={s.id} value={s.name}>{s.name}</option>
                 ))}
              </select>
+             {isTeacher && studentsList.length === 0 && (
+                <p className="text-[10px] font-bold text-rose-500 mt-2 mr-2">لا يوجد طلاب مسجلين باسمك حالياً، يرجى مراجعة الإدارة.</p>
+             )}
           </div>
 
           {/* مدة المحاضرة */}
@@ -284,16 +293,20 @@ const ClassForm: React.FC<{ user?: any }> = ({ user }) => {
 
           <div className="space-y-1.5 pt-2 border-t border-slate-50">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">المحاضر المسؤول</label>
-             <select 
-                required 
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold outline-none disabled:opacity-60" 
-                value={formData.teacher} 
-                onChange={e => setFormData({...formData, teacher: e.target.value})}
-                disabled={user?.role === 'teacher'}
-             >
-                <option value="">اختر محاضراً...</option>
-                {teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
-             </select>
+             <div className="relative">
+                <User className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                <select 
+                    required 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-4 text-sm font-bold outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed" 
+                    value={formData.teacher} 
+                    onChange={e => setFormData({...formData, teacher: e.target.value})}
+                    disabled={isTeacher}
+                >
+                    <option value="">اختر محاضراً...</option>
+                    {teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
+                </select>
+             </div>
+             {isTeacher && <p className="text-[9px] font-bold text-slate-400 mt-1 mr-1">يتم تسجيل المحاضرة باسمك تلقائياً كـ محاضر النظام الحالي.</p>}
           </div>
 
           <button type="submit" disabled={actionLoading} className="w-full bg-blue-700 text-white py-5 rounded-2xl font-black shadow-xl flex items-center justify-center transition-all disabled:opacity-50 mt-4 active:scale-95 text-lg">
