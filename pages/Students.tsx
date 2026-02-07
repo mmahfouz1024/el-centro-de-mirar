@@ -9,14 +9,10 @@ import {
   Edit2, 
   Globe, 
   User,
-  Filter,
   ShieldCheck,
-  ChevronLeft,
   Smartphone,
-  Calendar,
   Layers,
   MapPin,
-  MoreHorizontal,
   Check,
   X,
   Baby
@@ -53,17 +49,20 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
         db.profiles.getAll()
       ]);
       
-      let filteredStudents = studentsData || [];
+      let allStudents = studentsData || [];
       
-      // منطق عرض طلاب المحاضر فقط
+      // تحسين منطق الفلترة لضمان ظهور الطلاب المرتبطين بالمحاضر
       if (isTeacher && user?.full_name) {
-        filteredStudents = filteredStudents.filter((s: Student) => s.teacher_name === user.full_name);
+        const currentTeacherName = user.full_name.trim().toLowerCase();
+        allStudents = allStudents.filter((s: Student) => 
+          s.teacher_name?.trim().toLowerCase() === currentTeacherName
+        );
       }
       
-      setStudents(filteredStudents);
+      setStudents(allStudents);
       setProfiles(profilesData || []);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching students:", error);
     } finally {
       setLoading(false);
     }
@@ -92,14 +91,11 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
   const handleStatusUpdate = async (id: string, newStatus: 'yes' | 'no') => {
     setUpdatingId(id);
     try {
-      // تحديث الواجهة فوراً (Optimistic Update)
       setStudents(prev => prev.map(s => s.id === id ? { ...s, renewal_status: newStatus } : s));
-      
-      // تحديث قاعدة البيانات
       await db.students.update(id, { renewal_status: newStatus });
     } catch (error) {
-      alert('فشل تحديث الحالة، يرجى المحاولة مرة أخرى');
-      fetchStudents(); // تراجع عند الخطأ
+      alert('فشل تحديث الحالة');
+      fetchStudents();
     } finally {
       setUpdatingId(null);
     }
@@ -107,7 +103,8 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
-      const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.student_number && s.student_number.includes(searchTerm));
+      const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (s.student_number && s.student_number.includes(searchTerm));
       const matchesTeacher = filterTeacher === 'الكل' || s.teacher_name === filterTeacher;
       const matchesLanguage = filterLanguage === 'الكل' || s.enrolled_language === filterLanguage;
       const matchesCountry = filterCountry === 'الكل' || s.country === filterCountry;
@@ -127,16 +124,15 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
             <div className="p-3 bg-blue-700 text-white rounded-2xl ml-4 shadow-xl">
                <Users size={28} />
             </div>
-            {isTeacher ? 'طلابي' : 'شؤون الطلاب'}
+            {isTeacher ? 'قائمة طلابي' : 'شؤون الطلاب'}
           </h2>
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 mr-1">
-            {isTeacher ? `قائمة الطلاب التابعين لمحاضرة: ${user?.full_name}` : 'إدارة الملفات الأكاديمية والبيانات الموحدة'}
+            {isTeacher ? `الطلاب المرتبطين بالمحاضر: ${user?.full_name}` : 'إدارة الملفات الأكاديمية والبيانات الموحدة'}
           </p>
         </div>
         
-        {/* إخفاء زر تسجيل طالب جديد للمحاضر */}
         {!isTeacher && (
-          <button onClick={() => navigate('/students/form')} className="bg-gradient-to-r from-blue-700 to-indigo-600 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center shadow-xl hover:scale-105 transition-all active:scale-95">
+          <button onClick={() => navigate('/students/form')} className="bg-gradient-to-r from-blue-700 to-indigo-600 text-white px-8 py-4 rounded-3xl font-black text-sm flex items-center shadow-xl hover:scale-105 transition-all">
             <Plus size={18} className="ml-2" />
             تسجيل طالب جديد
           </button>
@@ -149,7 +145,7 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
             <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input 
               type="text" 
-              placeholder="ابحث بالاسم أو الرقم التعريفي للطالب..." 
+              placeholder="ابحث في قائمة طلابك..." 
               className="w-full bg-slate-50 border border-slate-100 rounded-2xl pr-12 pl-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -158,7 +154,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
          
          {!isTeacher && (
            <div className="flex flex-wrap items-center gap-4">
-              {/* Language Filter */}
               <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                  <div className="p-2 bg-white rounded-xl shadow-sm text-blue-600"><Layers size={16} /></div>
                  <select 
@@ -171,7 +166,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                  </select>
               </div>
 
-              {/* Country Filter */}
               <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                  <div className="p-2 bg-white rounded-xl shadow-sm text-emerald-600"><Globe size={16} /></div>
                  <select 
@@ -195,18 +189,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                     {supervisorsList.map(s => <option key={s.id} value={s.full_name}>{s.full_name}</option>)}
                  </select>
               </div>
-
-              <div className="flex items-center space-x-2 space-x-reverse bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                 <div className="p-2 bg-white rounded-xl shadow-sm text-amber-500"><User size={16} /></div>
-                 <select 
-                    className="bg-transparent text-slate-600 text-[11px] font-black outline-none cursor-pointer px-3 min-w-[140px]"
-                    value={filterTeacher}
-                    onChange={(e) => setFilterTeacher(e.target.value)}
-                 >
-                    <option value="الكل">جميع المحاضرين</option>
-                    {teachersList.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
-                 </select>
-              </div>
            </div>
          )}
       </div>
@@ -216,29 +198,27 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 text-slate-400">
             <Loader2 className="animate-spin mb-6" size={50} />
-            <span className="font-black tracking-[0.2em] text-xs uppercase">جاري استدعاء البيانات...</span>
+            <span className="font-black tracking-[0.2em] text-xs uppercase">جاري استدعاء قائمة الطلاب...</span>
           </div>
         ) : filteredStudents.length === 0 ? (
           <div className="py-40 text-center">
             <Users size={80} className="mx-auto text-slate-100 mb-6" />
-            <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد سجلات مطابقة</h3>
-            <p className="text-slate-400 font-bold text-sm">لا يوجد طلاب مسجلين حالياً.</p>
+            <h3 className="text-xl font-black text-slate-800 mb-2">لا يوجد طلاب مرتبطة بك</h3>
+            <p className="text-slate-400 font-bold text-sm">إذا كنت تعتقد أن هناك خطأ، يرجى مراجعة إدارة المركز.</p>
           </div>
         ) : (
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full text-right border-collapse">
               <thead>
                 {isTeacher ? (
-                  // واجهة المحاضر: اسم وعمر فقط
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                     <th className="px-8 py-5 text-[12px] font-black text-slate-500 uppercase tracking-widest">اسم الطالب</th>
                     <th className="px-8 py-5 text-[12px] font-black text-slate-500 uppercase tracking-widest text-left">العمر</th>
                   </tr>
                 ) : (
-                  // واجهة المدير: الجدول الكامل
                   <tr className="bg-slate-50/50 border-b border-slate-100">
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">الطالب / الكود</th>
-                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">المسار والمستوى</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">المسار</th>
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">حالة الاشتراك</th>
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الموقع</th>
                     <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الاتصال</th>
@@ -251,7 +231,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                 {filteredStudents.map(student => (
                   <tr key={student.id} className="group hover:bg-blue-50/30 transition-colors">
                     {isTeacher ? (
-                      // صفوف المحاضر
                       <>
                         <td className="px-8 py-6">
                           <div className="flex items-center space-x-4 space-x-reverse">
@@ -272,7 +251,6 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                         </td>
                       </>
                     ) : (
-                      // صفوف المدير
                       <>
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-3 space-x-reverse">
@@ -286,12 +264,9 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${student.enrolled_language ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                           <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${student.enrolled_language ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
                               {student.enrolled_language || 'عام'}
-                            </span>
-                            <span className="text-[9px] font-bold text-slate-500">{student.level}</span>
-                          </div>
+                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex justify-center gap-2">
@@ -336,17 +311,17 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
                         <td className="px-6 py-4 text-center">
                            <p className="text-[11px] font-black text-slate-700">{student.teacher_name || '---'}</p>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 text-left">
                           <div className="flex items-center space-x-1 space-x-reverse opacity-0 group-hover:opacity-100 transition-all duration-300">
                             <button 
                               onClick={() => navigate('/students/form', { state: { data: student } })} 
-                              className="p-2 text-slate-300 hover:text-blue-600 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-blue-100"
+                              className="p-2 text-slate-300 hover:text-blue-600 hover:bg-white rounded-xl shadow-sm transition-all"
                             >
                               <Edit2 size={16}/>
                             </button>
                             <button 
                               onClick={() => handleDelete(student.id)} 
-                              className="p-2 text-slate-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-rose-100"
+                              className="p-2 text-slate-300 hover:text-rose-500 hover:bg-white rounded-xl shadow-sm transition-all"
                             >
                               <Trash2 size={16}/>
                             </button>
@@ -368,11 +343,11 @@ const Students: React.FC<{ user?: any }> = ({ user }) => {
            <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">إجمالي النتائج:</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">عدد طلابك:</span>
                  <span className="text-sm font-black">{filteredStudents.length} طالب</span>
               </div>
            </div>
-           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">El Centro de Mirar • Database Live</p>
+           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">El Centro de Mirar • Academic Sync</p>
         </div>
       )}
     </div>
